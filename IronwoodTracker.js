@@ -1,27 +1,183 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
 // @icon         https://github.com/Desperer/IronwoodScripts/blob/main/icon/IronwoodSword.png?raw=true
-// @grant        none
+// @grant        GM.setValue
+// @grant        GM.getValue
 // @license      MIT
 // ==/UserScript==
 
-//let startingXp = document.querySelector(".exp").innerText;
-
-//let startingXp = parseXp('Stats\nDefense XP\n1,557,786 XP');
-//let startingXp = "" + document.querySelectorAll(".card")[2].innerText
-//let startingXp = parseXp(document.querySelector(".exp").innerText);
-
 //Variables you can change
-var timeInterval = 2*1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes
+
+/*
+-----------------------------------------------------------------
+CONFIGURATION - EDIT THESE TO YOUR LIKING!
+-----------------------------------------------------------------
+*/
+var timeInterval = 3*1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes
+var soundInterval = 10*1000 // Default timeInterval 10*1000 = 10 seconds, this is the time between sound alerts when idling
+
+//Feel free to replace the alert sound url
+let rareDropSound = new Audio("https://cdn.freesound.org/previews/571/571487_7114905-lq.mp3");
+let idleSound = new Audio("https://cdn.freesound.org/previews/504/504773_9961300-lq.mp3");
+
+//alert base volume. Use a decimal like .8 for quieter alert sound
+rareDropSound.volume = 1.0;
+idleSound.volume = 1.0;
+
+/*
+-----------------------------------------------------------------
+DO NOT EDIT BELOW! DO NOT EDIT BELOW! DO NOT EDIT BELOW!
+-----------------------------------------------------------------
+*/
+
+
+
+/*
+------------------------
+Start UI components
+------------------------
+*/
+
+
+//Floating box style format
+let boxStyle =
+    ' background: #0D2234;' +
+    ' border: 2px solid #767672;' +
+    ' padding: 4px;' +
+    ' border-radius: 5px;' +
+    ' position: fixed;' +
+    ' opacity: .6;' +
+    ' float: right;' +
+    ' object-fit: none;' +
+    ' max-width: 300px;' ;
+
+//Button style format
+let buttonStyle =
+    ' background: #061A2E;' +
+    ' padding: 2px;' +
+    ' padding-left: 6px;' +
+    ' padding-right: 6px;' +
+    ' font-size: 16px;' +
+    ' display: inline-block;' +
+    ' text-align: center;' +
+    'max-height: 32px;' +
+    'box-sizing: content-box;' +
+    'margin: 0px;' +
+    'float: left;' +
+    'line-height: 1.2;' +
+    'user-select: none;' +
+    'max-width: 200px;' ;
+
+//Button settings style format
+let buttonSettingsStyle =
+    ' background: #061A2E;' +
+    ' padding: 8px;' +
+    ' font-size: 16px;' +
+    ' display: block;' +
+    ' text-align: center;' +
+    'max-height: 32px;' +
+    'border: 2px solid white;' +
+    'border-radius: 5px;' +
+    'box-sizing: content-box;' +
+    'margin: 4px;' +
+    'line-height: 1.2;' +
+    'user-select: none;' +
+    'max-width: 2000px;' ;
+
+//Box for stats
+var box = document.createElement( 'div' );
+document.body.appendChild( box );
+box.style.cssText = boxStyle;
+box.style.minWidth = '200px';
+box.innerHTML = 'Click &#8634; to start tracking';
+box.style.bottom = '43px';
+box.style.right = '24px';
+document.body.appendChild( box );
+
+//Box for buttons
+var box2 = document.createElement( 'div' );
+box2.style.cssText = boxStyle;
+box2.style.bottom = '4px';
+box2.style.right = '24px';
+document.body.appendChild( box2 );
+
+//Box for settings
+var boxSettings = document.createElement( 'div' );
+boxSettings.style.cssText = boxStyle;
+boxSettings.style.minWidth = '30px';
+boxSettings.style.bottom = '43px';
+boxSettings.style.right = '250px';
+
+//Button to minimize tracker
+var closeButton = document.createElement( 'div' );
+closeButton.innerHTML = '&#9776;';
+closeButton.style.cssText = buttonStyle;
+box2.insertBefore( closeButton, box2.firstChild );
+closeButton.addEventListener("click", function(){ hideTracker(); });
+
+//Button to reset tracker stats
+var resetButton = document.createElement( 'div' );
+resetButton.innerHTML = '&#8634;';
+resetButton.style.cssText = buttonStyle;
+box2.insertBefore( resetButton, closeButton );
+resetButton.addEventListener("click", function(){ resetTracker(); });
+
+//Button to open settings
+var settingsButton = document.createElement( 'div' );
+settingsButton.innerHTML = '&#9881;';
+settingsButton.style.cssText = buttonStyle;
+box2.insertBefore( settingsButton, resetButton );
+settingsButton.addEventListener("click", function(){ hideSettings(); });
+
+//Button to toggle rare drop sound alerts
+var rareAlertButton = document.createElement( 'div' );
+rareAlertButton.style.cssText = buttonSettingsStyle;
+
+//Button to toggle idle sound alerts
+var idleAlertButton = document.createElement( 'div' );
+idleAlertButton.style.cssText = buttonSettingsStyle;
+
+
+/*
+------------------------
+End UI components
+------------------------
+*/
+
+
 
 //Variables you should not change yet
 var boxToggleState = true; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
+var boxSettingsToggleState = false; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
 var isRunning = false; // Tracker requires manual click to start as there is not yet functionality for checking if the page is fully loaded before starting
+
+//Local storage variables for settings
+var rareAlert;
+var idleAlert;
+
+(async () => {
+    rareAlert = await GM.getValue('rareAlert', false);
+    idleAlert = await GM.getValue('idleAlert', false);
+    if (rareAlert == true){
+        rareAlertButton.style.color = 'lightgreen';
+    }
+    else {
+        rareAlertButton.style.color = 'red';
+    }
+    if (idleAlert == true){
+        idleAlertButton.style.color = 'lightgreen';
+    }
+    else {
+        idleAlertButton.style.color = 'red';
+    }
+
+})();
+
 
 //Messages to display
 const loadingText = 'Loading...';
@@ -35,15 +191,10 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 const cardList = document.getElementsByClassName('card');
 
 //instantiate variables for tracker
-var hasRun = 'false';
-//var currentSkill = '';
-//var startingXp, currentXp = 0;
-//var startingConsumables, consumables = {};
-//var startingFood, currentFood = 0;
-//var startingPot, currentPot = 0;
-//var startingArrows, currentArrows = 0;
-//var startingCoins, currentCoins = 0;
-//var startTime = new Date();
+var hasRun = false;
+var hasPlayed = false;
+var notifStatus = false;
+var soundStorage = 0;
 
 const trackedSkill = {
     name: '',
@@ -57,6 +208,8 @@ const trackedSkill = {
     currentArrows: 0,
     startingCoins: 0,
     currentCoins: 0,
+    startingDrops: 0,
+    currentDrops: 0,
     startTime: new Date(),
 
     reset: function() {
@@ -71,6 +224,8 @@ const trackedSkill = {
         this.currentArrows = 0;
         this.startingCoins = 0;
         this.currentCoins = 0;
+        this.startingDrops = 0;
+        this.currentDrops = 0;
         this.startTime = new Date();
     }
 
@@ -78,7 +233,9 @@ const trackedSkill = {
 
 
 function resetTracker(){ //Reset all stats in the tracker
+    stopSound();
     trackedSkill.reset();
+    hasPlayed = false;
     let currentSkill = getCurrentSkill();
     if (checkAllowedSkill(currentSkill)) {
         trackedSkill.name = getCurrentSkill();
@@ -93,6 +250,7 @@ function resetTracker(){ //Reset all stats in the tracker
 }
 
 function hideTracker(){ //minimize the tracker UI
+    stopSound();
     if (boxToggleState == true) {
         box.parentNode.removeChild( box );
         boxToggleState = false;
@@ -109,6 +267,75 @@ function hideTracker(){ //minimize the tracker UI
 
     }
 }
+
+function hideSettings(){ //minimize the tracker UI
+    stopSound();
+    if (boxSettingsToggleState == true) {
+        box2.parentNode.removeChild( boxSettings );
+        boxSettingsToggleState = false;
+    }
+    else {
+        document.body.appendChild( boxSettings );
+        boxSettings.innerHTML = 'Settings<br>';
+        rareAlertButton.innerHTML = 'Rare drop sound';
+        boxSettings.appendChild( rareAlertButton, boxSettings.firstChild );
+        idleAlertButton.innerHTML = 'Idle sound';
+        boxSettings.insertBefore( idleAlertButton, boxSettings.lastChild );
+        rareAlertButton.addEventListener("click", function(){ toggleRareAlert(); });
+        idleAlertButton.addEventListener("click", function(){ toggleIdleAlert(); });
+        boxSettingsToggleState = true;
+    }
+}
+
+function toggleRareAlert(){ //toggle sound alert for rare drop
+    console.log('rare');
+    if (rareAlert == true) {
+        console.log('become red!');
+        rareAlertButton.style.color = 'red';
+        rareAlert = false;
+        (async () => {await (GM.setValue('rareAlert', false)); })();
+    }
+    else {
+        console.log('become green!');
+        rareAlertButton.style.color = 'lightgreen';
+        rareAlert = true;
+        (async () => {await (GM.setValue('rareAlert', true)); })();
+    }
+}
+
+function toggleIdleAlert(){ //toggle sound alert for rare drop
+    if (idleAlert == true) {
+        idleAlertButton.style.color = 'red';
+        idleAlert = false;
+        (async () => {await (GM.setValue('idleAlert', false)); })();
+    }
+    else {
+        idleAlertButton.style.color = 'lightgreen';
+        idleAlert = true;
+        (async () => {await (GM.setValue('idleAlert', true)); })();
+    }
+}
+
+
+
+
+function playSound() {
+    rareDropSound.play();
+}
+
+function stopSound() {
+    if (soundStorage != 0) {
+        clearInterval(soundStorage);
+        soundStorage = 0;
+    }
+}
+
+function idlePlaySound() {
+    if ( document.getElementsByClassName("ring").length == 0){
+        idleSound.play();
+    }
+}
+
 
 function checkAllowedSkill (skill) { //return true if the skill is a valid skill (not blacklisted menu options)
     if (blacklistedPages.includes(skill)){
@@ -178,7 +405,18 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
         //console.info(cardText);
 
         //Get coin count from Loot card
+
         if (cardText[0] == 'Loot'){
+            for (let item = 0; item < cardText.length; item++) {
+                //console.log(cardText[item]);
+                if (hasPlayed == false) {
+                    if (cardText[item].includes('Blueprint') || cardText[item].includes('Ring') || cardText[item].includes('Amulet') || cardText[item].includes('Rune') || cardText[item].includes('Dagger')) {
+                        notifStatus = true;
+                    }
+
+                }
+            }
+
             if (cardText[1] == 'Coins'){
                 trackedSkill.currentCoins = removeCommas(cardText[2]);
                 //console.info("Set currentCoins to " + trackedSkill.currentCoins);
@@ -220,6 +458,13 @@ function trackerLoop() {
             displayBoxInactive();
         }
 
+    }
+    if (notifStatus == true && hasPlayed == false) {
+        soundStorage = setInterval(playSound, soundInterval);
+        hasPlayed = true;
+    }
+    if (idleAlert == true) {
+        idlePlaySound();
     }
 }
 
@@ -281,69 +526,3 @@ function displayBoxInactive() { // If on incorrect skill page, show background a
 
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
 
-
-/*
-------------------------
-All UI components below
-------------------------
-*/
-
-//Button style format
-let buttonStyle =
-    ' background: #061A2E;' +
-    ' padding: 2px;' +
-    ' padding-left: 6px;' +
-    ' padding-right: 6px;' +
-    ' font-size: 16px;' +
-    ' display: inline-block;' +
-    ' text-align: center;' +
-    'max-height: 32px;' +
-    'box-sizing: content-box;' +
-    'margin: 0px;' +
-    'float: left;' +
-    'line-height: 1.2;' +
-    'user-select: none;' +
-    'max-width: 80px;' ;
-
-//Floating box style format
-let boxStyle =
-    ' background: #0D2234;' +
-    ' border: 2px solid #767672;' +
-    ' padding: 4px;' +
-    ' border-radius: 5px;' +
-    ' position: fixed;' +
-    ' opacity: .6;' +
-    ' float: right;' +
-    ' object-fit: none;' +
-    ' max-width: 400px;' ;
-
-//Box for stats
-var box = document.createElement( 'div' );
-document.body.appendChild( box );
-box.style.cssText = boxStyle;
-box.style.minWidth = '200px';
-box.innerHTML = 'Click &#8634; to start tracking';
-box.style.bottom = '43px';
-box.style.right = '24px';
-document.body.appendChild( box );
-
-//Box for buttons
-var box2 = document.createElement( 'div' );
-box2.style.cssText = boxStyle;
-box2.style.bottom = '4px';
-box2.style.right = '24px';
-document.body.appendChild( box2 );
-
-//Button to minimize tracker
-var closeButton = document.createElement( 'div' );
-closeButton.innerHTML = '&#9776;';
-closeButton.style.cssText = buttonStyle;
-box2.insertBefore( closeButton, box2.firstChild );
-closeButton.addEventListener("click", function(){ hideTracker(); });
-
-//Button to reset tracker stats
-var resetButton = document.createElement( 'div' );
-resetButton.innerHTML = '&#8634;';
-resetButton.style.cssText = buttonStyle;
-box2.insertBefore( resetButton, closeButton );
-resetButton.addEventListener("click", function(){ resetTracker(); });
