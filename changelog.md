@@ -1,5 +1,9 @@
 # Changelog
 
+### Version 0.4.2
+
+- Fixed small typo in code
+
 ### Version 0.4.1
 
 - Added "hours" digits to timer
