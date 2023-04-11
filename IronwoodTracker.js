@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.4.1
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -322,10 +322,7 @@ function playSound() {
 }
 
 function stopSound() {
-    if (soundStorage != 0) {
         clearInterval(soundStorage);
-        soundStorage = 0;
-    }
 }
 
 function idlePlaySound() {
@@ -410,6 +407,7 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
                 if (hasPlayed == false) {
                     if (cardText[item].includes('Blueprint') || cardText[item].includes('Ring') || cardText[item].includes('Amulet') || cardText[item].includes('Rune') || cardText[item].includes('Dagger')) {
                         notifStatus = true;
+                        hasPlayed == true;
                     }
 
                 }
