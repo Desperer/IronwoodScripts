@@ -2,7 +2,7 @@
 
 Track useful action stats in Ironwood RPG. Supports both Combat and Skilling.    
 
-![image](https://user-images.githubusercontent.com/2962354/227807585-79e259a7-6e9c-4d34-aed6-bf036b91a749.png)
+![image](https://user-images.githubusercontent.com/2962354/231190808-08c09e40-fea5-4118-87fd-d6690019aa60.png)
 
 ### Features
 
