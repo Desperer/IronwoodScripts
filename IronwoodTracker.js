@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.4.1
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -11,15 +11,13 @@
 // @license      MIT
 // ==/UserScript==
 
-//Variables you can change
-
 /*
 -----------------------------------------------------------------
 CONFIGURATION - EDIT THESE TO YOUR LIKING!
 -----------------------------------------------------------------
 */
-var timeInterval = 3*1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes
-var soundInterval = 10*1000 // Default timeInterval 10*1000 = 10 seconds, this is the time between sound alerts when idling
+var timeInterval = 3*1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to using 2 or 1 seconds.
+var soundInterval = 10*1000 // Default timeInterval 10*1000 = 10 seconds, this is the time between sound alerts when idling/inactive
 
 //Feel free to replace the alert sound url
 let rareDropSound = new Audio("https://cdn.freesound.org/previews/571/571487_7114905-lq.mp3");
@@ -324,10 +322,7 @@ function playSound() {
 }
 
 function stopSound() {
-    if (soundStorage != 0) {
         clearInterval(soundStorage);
-        soundStorage = 0;
-    }
 }
 
 function idlePlaySound() {
@@ -412,6 +407,7 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
                 if (hasPlayed == false) {
                     if (cardText[item].includes('Blueprint') || cardText[item].includes('Ring') || cardText[item].includes('Amulet') || cardText[item].includes('Rune') || cardText[item].includes('Dagger')) {
                         notifStatus = true;
+                        hasPlayed == true;
                     }
 
                 }
@@ -452,10 +448,10 @@ function trackerLoop() {
     if (isRunning == true && boxToggleState == true && checkAllowedSkill(currentSkill)) {
         if (trackedSkill.name == currentSkill) {
             parseCards();
-            displayBox();
+            displayBox("active");
         }
         else {
-            displayBoxInactive();
+            displayBox("inactive");
         }
 
     }
@@ -468,12 +464,20 @@ function trackerLoop() {
     }
 }
 
+function timerFormat(){
+    let seconds = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0');
+    let minutes = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60)) % 60).toString().padStart(2, '0');
+    let hours = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60/60))).toString().padStart(2, '0');
+    return hours + ":" + minutes + ":" + seconds;
+}
 
-function displayBox() {
+
+function displayBox(status) {
     //console.log('displayBox: ' + trackedSkill.name);
     let currentSkill = getCurrentSkill();
 
-    let elapsedTimeSecs = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0'); //seconds since last minute interval, for the display timer
+//    let elapsedTimeSecsTimer = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0'); //seconds since last minute interval, for the display timer
+//    let elapsedTimeMinsTimer = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60)) % 60).toString().padStart(2, '0'); //minutes since last minute interval, for the display timer
     let elapsedTimeMins = ((Date.now() - trackedSkill.startTime)/1000/60); //elapsed time in minutes for calc
     let elapsedTimeHours = ((Date.now() - trackedSkill.startTime)/1000/60/60); //elapsed time in minutes for calc
     let formattedTimeMins = Math.trunc(elapsedTimeMins); //elapsed time in minutes but formatted for display
@@ -498,10 +502,11 @@ function displayBox() {
     //        console.log(elapsedTimeMins);
 
     // If on correct skill page, show full details
-    if (currentSkill == trackedSkill.name && isRunning == true) {
+    if (currentSkill == trackedSkill.name && isRunning == true && status == 'active') {
         box.innerHTML =
             //            '<img src="assets/misc/defense.png" width="10" height="10">' +
-            '<b>' + trackedSkill.name + " - " + formattedTimeMins + ':' + elapsedTimeSecs + '</b><hr>' +
+//            '<b>' + trackedSkill.name + " - " + formattedTimeMins + ':' + elapsedTimeSecsTimer + '</b><hr>' +
+            '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' +
             'XP earned: ' + earnedXp.toLocaleString('en') + ' (' + xpPerHour.toLocaleString('en') +'/h)<br>' +
             'Coins earned: ' + earnedCoins.toLocaleString('en') + ' (' + coinsPerHour.toLocaleString('en') +'/h)<br>' +
             "Food used: " + usedFood.toLocaleString('en') + ' (' + foodPerHour.toLocaleString('en') +'/h)<br>' +
@@ -513,16 +518,21 @@ function displayBox() {
             //            "Arrows/h: " + arrowsPerHour.toLocaleString('en') + '<br>' +
             ' ';
     }
+    else if (status == "inactive"){
+ //           box.innerHTML = '<b>' + trackedSkill.name + " - " + Math.trunc(elapsedTimeMins) + ':' + elapsedTimeSecsTimer + '</b><br>' + redirectText;
+        box.innerHTML = '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><br>' + redirectText;
+    }
 }
 
+/*
 function displayBoxInactive() { // If on incorrect skill page, show background acitvity
-    let elapsedTimeSecs = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0'); //seconds since last minute interval, for the display timer
+    let elapsedTimeSecsTimer = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0'); //seconds since last minute interval, for the display timer
     let elapsedTimeMins = ((Date.now() - trackedSkill.startTime)/1000/60); //elapsed time in minutes for calc
     let formattedTimeMins = Math.trunc(elapsedTimeMins); //elapsed time in minutes but formatted for display
 
-    box.innerHTML = '<b>' + trackedSkill.name + " - " + Math.trunc(elapsedTimeMins) + ':' + elapsedTimeSecs + '</b><br>' + redirectText;
+    box.innerHTML = '<b>' + trackedSkill.name + " - " + Math.trunc(elapsedTimeMins) + ':' + elapsedTimeSecsTimer + '</b><br>' + redirectText;
 
 }
-
+*/
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
 
