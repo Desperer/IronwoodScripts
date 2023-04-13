@@ -1,5 +1,10 @@
 # Changelog
 
+### Version 0.4.3
+
+- Added # of kills estimation based on fang/bone drops
+- Fixed a bug causing stats in combat to be off by one if the tracker is started before the action started 
+
 ### Version 0.4.2
 
 - Fixed small typo in code
