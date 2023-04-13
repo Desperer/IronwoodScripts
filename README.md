@@ -1,22 +1,21 @@
 # IronwoodTracker    
 
-Track useful action stats in Ironwood RPG. Supports both Combat and Skilling.    
+Track useful action stats in Ironwood RPG. 
 
-![image](https://user-images.githubusercontent.com/2962354/231190808-08c09e40-fea5-4118-87fd-d6690019aa60.png)
+![image](https://user-images.githubusercontent.com/2962354/231868023-928d914a-24bd-4dc2-985b-713e9bd34125.png)
 
 ### Features
 
-- Tracks xp/coin gains and consumables used per hour
-- Alerts player on rare item drop
-- Alerts player when actions have stopped (idling)
+- Tracks resource gain and consumption in both skilling and combat
+- Plays sound alerts on rare item drop or when the player is idling (configurable)
+- Easily hide out of view when not in use - tracking continues even when minimized
 
 ### Usage
 
-- &#9776; minimizes the tracker (continues to track in the background!)
+- &#9776; minimizes the tracker
 - &#8634; starts/restarts the tracker for the current skill page
 - &#9881; opens the settings window, where you can toggle features on or off
 - Clicking any button stops rare drop alerts until &#8634; is clicked again
-
 
 
 ---
