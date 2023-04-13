@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.4.3
+// @version      0.5
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -45,14 +45,15 @@ Start UI components
 //Floating box style format
 let boxStyle =
     ' background: #0D2234;' +
-    ' border: 2px solid #767672;' +
+    ' border: 2px solid #51606D;' +
     ' padding: 4px;' +
     ' border-radius: 5px;' +
     ' position: fixed;' +
     ' opacity: .6;' +
     ' float: right;' +
     ' object-fit: none;' +
-    ' max-width: 300px;' ;
+    ' max-height: 200px;' +
+    ' max-width: 350px;' ;
 
 //Button style format
 let buttonStyle =
@@ -79,13 +80,13 @@ let buttonSettingsStyle =
     ' display: block;' +
     ' text-align: center;' +
     'max-height: 32px;' +
-    'border: 2px solid white;' +
+    'border: 2px solid #637A70;' +
     'border-radius: 5px;' +
     'box-sizing: content-box;' +
     'margin: 4px;' +
     'line-height: 1.2;' +
     'user-select: none;' +
-    'max-width: 2000px;' ;
+    'max-width: 400px;' ;
 
 //Box for stats
 var box = document.createElement( 'div' );
@@ -108,8 +109,8 @@ document.body.appendChild( box2 );
 var boxSettings = document.createElement( 'div' );
 boxSettings.style.cssText = boxStyle;
 boxSettings.style.minWidth = '30px';
-boxSettings.style.bottom = '43px';
-boxSettings.style.right = '250px';
+boxSettings.style.bottom = '245px';
+boxSettings.style.right = '24px';
 
 //Button to minimize tracker
 var closeButton = document.createElement( 'div' );
@@ -134,10 +135,12 @@ settingsButton.addEventListener("click", function(){ hideSettings(); });
 
 //Button to toggle rare drop sound alerts
 var rareAlertButton = document.createElement( 'div' );
+rareAlertButton.title = 'Toggle repeated sound notifications when a rare item is found';
 rareAlertButton.style.cssText = buttonSettingsStyle;
 
 //Button to toggle idle sound alerts
 var idleAlertButton = document.createElement( 'div' );
+idleAlertButton.title = 'Toggle repeated sound notifications when your action stops';
 idleAlertButton.style.cssText = buttonSettingsStyle;
 
 
@@ -151,7 +154,7 @@ End UI components
 
 //Variables you should not change yet
 var boxToggleState = true; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
-var boxSettingsToggleState = false; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
+var boxSettingsToggleState = false; // Default false keeps the settings page hidden on pageload, true would show settings box on startup but is not yet properly implemented
 var isRunning = false; // Tracker requires manual click to start as there is not yet functionality for checking if the page is fully loaded before starting
 
 //Local storage variables for settings
@@ -161,38 +164,28 @@ var idleAlert;
 (async () => {
     rareAlert = await GM.getValue('rareAlert', false);
     idleAlert = await GM.getValue('idleAlert', false);
-    if (rareAlert == true){
-        rareAlertButton.style.color = 'lightgreen';
-    }
-    else {
-        rareAlertButton.style.color = 'red';
-    }
-    if (idleAlert == true){
-        idleAlertButton.style.color = 'lightgreen';
-    }
-    else {
-        idleAlertButton.style.color = 'red';
-    }
-
 })();
 
 
 //Messages to display
 const loadingText = 'Loading...';
 const startingText = 'Click &#8634; to start tracking';
-const redirectText = 'Tracking progress is saved in the background.<br>Go back to the tracked skill page to view details.';
-const unavailableText = 'This page cannot be tracked.<br>Please try again.';
+const redirectText = 'Tracking progress is saved in the background.<br>Return to the tracked skill page to view details.';
+const unavailableText = 'This page cannot be tracked.<br>Please try another.';
+
+const gatherPages = ['Woodcutting', 'Mining', 'Farming', 'Fishing' ];
+const craftPages = ['Smelting', 'Smithing', 'Forging', 'Alchemy', 'Cooking' ];
+const combatPages = ['One-handed', 'Two-handed', 'Ranged', 'Defense' ];
 
 const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market', 'Quests', 'Leaderboards', 'Changelog',
                           'Settings', 'Discord', 'Reddit', 'Patreon', 'Rules', 'Terms of Use', 'Privacy Policy'];
 
-const cardList = document.getElementsByClassName('card');
-
 const boneList = ['Bone', 'Fang', 'Medium Bone', 'Medium Fang', 'Large Bone', 'Large Fang', 'Giant Bone'];
 
-let startedTrackerBeforeSkill = false;
+const cardList = document.getElementsByClassName('card');
 
 //instantiate variables for tracker
+let startedTrackerBeforeSkill = false;
 var hasRun = false;
 var hasPlayed = false;
 var notifStatus = false;
@@ -240,18 +233,25 @@ const trackedSkill = {
 
 function resetTracker(){ //Reset all stats in the tracker
     stopSound();
-    trackedSkill.reset();
     hasPlayed = false;
     let currentSkill = getCurrentSkill();
     if (checkAllowedSkill(currentSkill)) {
+        trackedSkill.reset();
         trackedSkill.name = getCurrentSkill();
         box.innerHTML = loadingText;
         isRunning = true;
         hasRun = true;
     }
+    //If unallowed skill, show error message then return to inactive or loading state
     else {
         box.innerHTML = unavailableText;
-        setTimeout(function() { box.innerHTML = startingText;}, 2000);
+        if (isRunning == true) {
+            setTimeout(function() { box.innerHTML = loadingText;}, 2000);
+        }
+
+        else {
+            setTimeout(function() { box.innerHTML = startingText;}, 2000);
+        }
     }
 }
 
@@ -274,15 +274,15 @@ function hideTracker(){ //minimize the tracker UI
     }
 }
 
+
 function hideSettings(){ //minimize the tracker UI
     stopSound();
-    if (boxSettingsToggleState == true) {
-        box2.parentNode.removeChild( boxSettings );
-        boxSettingsToggleState = false;
-    }
-    else {
+    if (boxSettingsToggleState == false) {
         document.body.appendChild( boxSettings );
-        boxSettings.innerHTML = 'Settings<br>';
+
+        if (rareAlert == true) {rareAlertButton.style.color = 'lightgreen';} else {rareAlertButton.style.color = 'red';}
+        if (idleAlert == true) {idleAlertButton.style.color = 'lightgreen';} else {idleAlertButton.style.color = 'red';}
+        boxSettings.innerHTML = '<h1 style=\"text-align:center;\"><b>Settings</b></h1> <hr style=\"border-color:inherit; margin: 0px -4px 8px\"></hr>';
         rareAlertButton.innerHTML = 'Rare drop sound';
         boxSettings.appendChild( rareAlertButton, boxSettings.firstChild );
         idleAlertButton.innerHTML = 'Idle sound';
@@ -291,18 +291,22 @@ function hideSettings(){ //minimize the tracker UI
         idleAlertButton.addEventListener("click", function(){ toggleIdleAlert(); });
         boxSettingsToggleState = true;
     }
+    else{
+        document.body.removeChild( boxSettings );
+        boxSettingsToggleState = false;
+    }
 }
 
 function toggleRareAlert(){ //toggle sound alert for rare drop
     console.log('rare');
     if (rareAlert == true) {
-        console.log('become red!');
+//        console.log('become red!');
         rareAlertButton.style.color = 'red';
         rareAlert = false;
         (async () => {await (GM.setValue('rareAlert', false)); })();
     }
     else {
-        console.log('become green!');
+//        console.log('become green!');
         rareAlertButton.style.color = 'lightgreen';
         rareAlert = true;
         (async () => {await (GM.setValue('rareAlert', true)); })();
@@ -473,13 +477,13 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
 function trackerLoop() {
     let currentSkill = getCurrentSkill();
 
-    if (isRunning == true && boxToggleState == true && checkAllowedSkill(currentSkill)) {
+    if (isRunning == true && boxToggleState == true) {
         if (trackedSkill.name == currentSkill) {
             parseCards();
-            displayBox("active");
+            box.innerHTML = displayBox("active");
         }
         else {
-            displayBox("inactive");
+            box.innerHTML = displayBox("inactive");
         }
 
     }
@@ -496,16 +500,29 @@ function timerFormat(){
     let seconds = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0');
     let minutes = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60)) % 60).toString().padStart(2, '0');
     let hours = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60/60))).toString().padStart(2, '0');
-    return hours + ":" + minutes + ":" + seconds;
+
+    if (hours > 0) {
+        return hours + ":" + minutes + ":" + seconds;
+    }
+    else {
+        return minutes + ":" + seconds;
+    }
 }
 
+function getIcon(skill) {
+    //Account for one-handed image being named improperly
+    if (skill == 'One-handed'){
+        return 'attack.png';
+    }
+    else{
+        return skill.toLowerCase() +'.png';
+    }
+}
 
 function displayBox(status) {
     //console.log('displayBox: ' + trackedSkill.name);
     let currentSkill = getCurrentSkill();
 
-//    let elapsedTimeSecsTimer = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0'); //seconds since last minute interval, for the display timer
-//    let elapsedTimeMinsTimer = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60)) % 60).toString().padStart(2, '0'); //minutes since last minute interval, for the display timer
     let elapsedTimeMins = ((Date.now() - trackedSkill.startTime)/1000/60); //elapsed time in minutes for calc
     let elapsedTimeHours = ((Date.now() - trackedSkill.startTime)/1000/60/60); //elapsed time in minutes for calc
     let formattedTimeMins = Math.trunc(elapsedTimeMins); //elapsed time in minutes but formatted for display
@@ -528,43 +545,56 @@ function displayBox(status) {
 
     let usedPots = trackedSkill.startingPots - trackedSkill.currentPots;
 
+    let boxContents = '';
+    //let boxTitle = '<div style=\"text-align:left; display:inline-block;\"><b> <img style=\"width:20px; object-fit:contain; image-rendering:pixelated\" src=\"assets/misc/alchemy.png\"> ' + trackedSkill.name + '<div style="margin-left:auto">' + timerFormat() + '</div></b></div>';
+    //clip-path: polygon(2px 2px, 46px 2px, 46px 46px, 2px 46px);
+    let boxTitle = '<div style="display:flex">' +
+        '<div><img style="height:20px; width:20px; image-rendering:crisp-edges; border-radius: 4px; border-color: white; " src="assets/misc/' + getIcon(trackedSkill.name) + '"></div>' +
+        ' <div><b> &nbsp; ' + trackedSkill.name + '</b></div>' +
+        '<div style="margin-left: auto;"> <b>' + timerFormat() + '</b> </div>' +
+        '</div>';
 
+    let boxDivider = '<hr style=\"border-color:inherit; margin: 0px -4px 4px\"></hr>';
+    let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;">XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> (' + xpPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> (' + coinsPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> (' + killsPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> (' + foodPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxArrows = '<p title="Total arrows consumed\" style=\"color:Wheat;">Arrows: ' + usedArrows.toLocaleString('en') + '<span style="float:right;"> (' + arrowsPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' + redirectText;
+  //  let boxSkillIcon = '<img style=\"width:10px; object-fit:contain\" src="assets/misc/defense.png">'
 
     //        console.log(elapsedTimeMins);
 
     // If on correct skill page, show full details
     if (currentSkill == trackedSkill.name && isRunning == true && status == 'active') {
-        box.innerHTML =
-            //            '<img src="assets/misc/defense.png" width="10" height="10">' +
-//            '<b>' + trackedSkill.name + " - " + formattedTimeMins + ':' + elapsedTimeSecsTimer + '</b><hr>' +
-            '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' +
-            'XP earned: ' + earnedXp.toLocaleString('en') + ' (' + xpPerHour.toLocaleString('en') +'/h)<br>' +
-            'Enemy kills: ' + enemyKills.toLocaleString('en') + ' (' + killsPerHour.toLocaleString('en') +'/h)<br>' +
-            'Coins earned: ' + earnedCoins.toLocaleString('en') + ' (' + coinsPerHour.toLocaleString('en') +'/h)<br>' +
-            "Food used: " + usedFood.toLocaleString('en') + ' (' + foodPerHour.toLocaleString('en') +'/h)<br>' +
-            "Arrows used: " + usedArrows.toLocaleString('en') + ' (' + arrowsPerHour.toLocaleString('en') +'/h)<br>' +
-            //"Potions used: " + usedPots.toLocaleString('en') + '<br>'
-            //            "<hr>XP/h: " + xpPerHour.toLocaleString('en') + '<br>' +
-            //            "Coins/h: " + coinsPerHour.toLocaleString('en') + '<br>' +
-            //            "Food/h: " + foodPerHour.toLocaleString('en') + '<br>' +
-            //            "Arrows/h: " + arrowsPerHour.toLocaleString('en') + '<br>' +
-            ' ';
+        boxContents += boxTitle + boxDivider + boxXP;
+        if (earnedCoins > 0){
+            boxContents += boxCoins;
+        }
+        if (enemyKills > 0){
+            boxContents += boxKills;
+        }
+        if (usedFood > 0){
+            boxContents += boxFood;
+        }
+        if (usedArrows > 0){
+            boxContents += boxArrows;
+        }
+        //            '<img src="assets/misc/defense.png" width="10" height="10">' +
+        //            '<b>' + trackedSkill.name + " - " + formattedTimeMins + ':' + elapsedTimeSecsTimer + '</b><hr>' +
+
+        //        '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' +
+        //            'XP earned: ' + earnedXp.toLocaleString('en') + ' (' + xpPerHour.toLocaleString('en') +'/h)<br>' +
+        //            'Enemy kills: ' + enemyKills.toLocaleString('en') + ' (' + killsPerHour.toLocaleString('en') +'/h)<br>' +
+        //            'Coins earned: ' + earnedCoins.toLocaleString('en') + ' (' + coinsPerHour.toLocaleString('en') +'/h)<br>' +
+        //           "Food used: " + usedFood.toLocaleString('en') + ' (' + foodPerHour.toLocaleString('en') +'/h)<br>' +
+        //           "Arrows used: " + usedArrows.toLocaleString('en') + ' (' + arrowsPerHour.toLocaleString('en') +'/h)<br>' +
     }
-    else if (status == "inactive"){
- //           box.innerHTML = '<b>' + trackedSkill.name + " - " + Math.trunc(elapsedTimeMins) + ':' + elapsedTimeSecsTimer + '</b><br>' + redirectText;
-        box.innerHTML = '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><br>' + redirectText;
+    else if (status == "inactive" && isRunning == true){
+        boxContents += boxTitle + boxDivider + redirectText;
     }
+    return boxContents;
 }
 
-/*
-function displayBoxInactive() { // If on incorrect skill page, show background acitvity
-    let elapsedTimeSecsTimer = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0'); //seconds since last minute interval, for the display timer
-    let elapsedTimeMins = ((Date.now() - trackedSkill.startTime)/1000/60); //elapsed time in minutes for calc
-    let formattedTimeMins = Math.trunc(elapsedTimeMins); //elapsed time in minutes but formatted for display
-
-    box.innerHTML = '<b>' + trackedSkill.name + " - " + Math.trunc(elapsedTimeMins) + ':' + elapsedTimeSecsTimer + '</b><br>' + redirectText;
-
-}
-*/
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
 

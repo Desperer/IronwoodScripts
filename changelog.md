@@ -1,5 +1,14 @@
 # Changelog
 
+### Version 0.5
+
+- Dynamically show stats when appropriate
+- Added colors to stats display for readability
+- Added skill icons
+- Minor style changes to improve the look of the tracker
+- Added mouseover text explaining stats and button functions
+
+
 ### Version 0.4.3
 
 - Added # of kills estimation based on fang/bone drops
