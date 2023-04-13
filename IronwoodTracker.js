@@ -188,6 +188,10 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 
 const cardList = document.getElementsByClassName('card');
 
+const boneList = ['Bone', 'Fang', 'Medium Bone', 'Medium Fang', 'Large Bone', 'Large Fang', 'Giant Bone'];
+
+let startedTrackerBeforeSkill = false;
+
 //instantiate variables for tracker
 var hasRun = false;
 var hasPlayed = false;
@@ -206,6 +210,8 @@ const trackedSkill = {
     currentArrows: 0,
     startingCoins: 0,
     currentCoins: 0,
+    startingKills: 0,
+    currentKills: 0,
     startingDrops: 0,
     currentDrops: 0,
     startTime: new Date(),
@@ -222,6 +228,8 @@ const trackedSkill = {
         this.currentArrows = 0;
         this.startingCoins = 0;
         this.currentCoins = 0;
+        this.startingKills = 0;
+        this.currentKills = 0;
         this.startingDrops = 0;
         this.currentDrops = 0;
         this.startTime = new Date();
@@ -401,6 +409,9 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
 
         //Get coin count from Loot card
 
+        let coinsFound = false;
+        let bonesFound = false;
+
         if (cardText[0] == 'Loot'){
             for (let item = 0; item < cardText.length; item++) {
                 //console.log(cardText[item]);
@@ -414,12 +425,29 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
             }
 
             if (cardText[1] == 'Coins'){
+                coinsFound = true;
                 trackedSkill.currentCoins = removeCommas(cardText[2]);
                 //console.info("Set currentCoins to " + trackedSkill.currentCoins);
                 //console.info('coins: ' + currentCoins);
-                if (trackedSkill.startingCoins == 0){
+                if (trackedSkill.startingCoins == 0 && !startedTrackerBeforeSkill){
                     trackedSkill.startingCoins = trackedSkill.currentCoins;
                 }
+            }
+
+            for (const bone of boneList) {
+                const boneIndex = cardText.indexOf(bone);
+                if (boneIndex > 0) {
+                    bonesFound = true;
+                    trackedSkill.currentKills = removeCommas(cardText[boneIndex + 1]);
+                    if (trackedSkill.startingKills == 0 && !startedTrackerBeforeSkill) {
+                        trackedSkill.startingKills = trackedSkill.currentKills;
+                    }
+                    break;
+                }
+            }
+
+            if (!coinsFound && !bonesFound) {
+                startedTrackerBeforeSkill = true;
             }
         }
         //Get food, arrow, potion count from Consumables card
@@ -495,6 +523,9 @@ function displayBox(status) {
     let earnedCoins = trackedSkill.currentCoins - trackedSkill.startingCoins;
     let coinsPerHour = Math.floor(earnedCoins/elapsedTimeHours);
 
+    let enemyKills = trackedSkill.currentKills - trackedSkill.startingKills;
+    let killsPerHour = Math.floor(enemyKills/elapsedTimeHours);
+
     let usedPots = trackedSkill.startingPots - trackedSkill.currentPots;
 
 
@@ -508,6 +539,7 @@ function displayBox(status) {
 //            '<b>' + trackedSkill.name + " - " + formattedTimeMins + ':' + elapsedTimeSecsTimer + '</b><hr>' +
             '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' +
             'XP earned: ' + earnedXp.toLocaleString('en') + ' (' + xpPerHour.toLocaleString('en') +'/h)<br>' +
+            'Enemy kills: ' + enemyKills.toLocaleString('en') + ' (' + killsPerHour.toLocaleString('en') +'/h)<br>' +
             'Coins earned: ' + earnedCoins.toLocaleString('en') + ' (' + coinsPerHour.toLocaleString('en') +'/h)<br>' +
             "Food used: " + usedFood.toLocaleString('en') + ' (' + foodPerHour.toLocaleString('en') +'/h)<br>' +
             "Arrows used: " + usedArrows.toLocaleString('en') + ' (' + arrowsPerHour.toLocaleString('en') +'/h)<br>' +
