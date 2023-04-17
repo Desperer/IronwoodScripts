@@ -2,11 +2,12 @@
 
 Track useful action stats in Ironwood RPG. 
 
-![image](https://user-images.githubusercontent.com/2962354/231868023-928d914a-24bd-4dc2-985b-713e9bd34125.png)
+![image](https://user-images.githubusercontent.com/2962354/232615412-820e18ef-dda2-499a-8a67-80aa4c9740f3.png)
 
 ### Features
 
 - Tracks resource gain and consumption in both skilling and combat
+- Estimates time until you reach your goals
 - Plays sound alerts on rare item drop or when the player is idling (configurable)
 - Easily hide out of view when not in use - tracking continues even when minimized
 

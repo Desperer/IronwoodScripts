@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.5.1
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
 // @icon         https://github.com/Desperer/IronwoodScripts/blob/main/icon/IronwoodSword.png?raw=true
 // @grant        GM.setValue
 // @grant        GM.getValue
+// @grant        GM.getValue
+// @grant        GM.info
 // @license      MIT
 // ==/UserScript==
 
@@ -16,7 +18,7 @@
 CONFIGURATION - EDIT THESE TO YOUR LIKING!
 -----------------------------------------------------------------
 */
-var timeInterval = 3*1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to using 2 or 1 seconds.
+var timeInterval = 3*1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to going lower
 var soundInterval = 10*1000 // Default timeInterval 10*1000 = 10 seconds, this is the time between sound alerts when idling/inactive
 
 //Feel free to replace the alert sound url
@@ -52,7 +54,7 @@ let boxStyle =
     ' opacity: .6;' +
     ' float: right;' +
     ' object-fit: none;' +
-    ' max-height: 200px;' +
+    ' max-height: 230px;' +
     ' max-width: 350px;' ;
 
 //Button style format
@@ -109,7 +111,7 @@ document.body.appendChild( box2 );
 var boxSettings = document.createElement( 'div' );
 boxSettings.style.cssText = boxStyle;
 boxSettings.style.minWidth = '30px';
-boxSettings.style.bottom = '245px';
+boxSettings.style.bottom = '275px';
 boxSettings.style.right = '24px';
 
 //Button to minimize tracker
@@ -182,7 +184,21 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 
 const boneList = ['Bone', 'Fang', 'Medium Bone', 'Medium Fang', 'Large Bone', 'Large Fang', 'Giant Bone'];
 
+const milestoneLevels = [10, 25, 40, 55, 70, 85, 100];
+const milestoneXP = [3794, 93750, 485725, 1480644, 3443692, 6794343, 12000000];
+
+const milestones = new Map([ //Level : Total XP Required
+  [10, 3794],
+  [25, 93750],
+  [40, 485725],
+  [55, 1480644],
+  [70, 3443692],
+  [85, 6794343],
+  [100, 12000000]
+]);
+
 const cardList = document.getElementsByClassName('card');
+const trackerComponent = document.getElementsByTagName("tracker-component");
 
 //instantiate variables for tracker
 let startedTrackerBeforeSkill = false;
@@ -207,6 +223,9 @@ const trackedSkill = {
     currentKills: 0,
     startingDrops: 0,
     currentDrops: 0,
+    currentLevel: 0,
+    currentLevelXP: 0,
+    nextLevelXP: 0,
     startTime: new Date(),
 
     reset: function() {
@@ -225,6 +244,9 @@ const trackedSkill = {
         this.currentKills = 0;
         this.startingDrops = 0;
         this.currentDrops = 0;
+        this.currentLevel = 0;
+        this.currentLevelXP = 0;
+        this.nextLevelXP = 0;
         this.startTime = new Date();
     }
 
@@ -282,7 +304,7 @@ function hideSettings(){ //minimize the tracker UI
 
         if (rareAlert == true) {rareAlertButton.style.color = 'lightgreen';} else {rareAlertButton.style.color = 'red';}
         if (idleAlert == true) {idleAlertButton.style.color = 'lightgreen';} else {idleAlertButton.style.color = 'red';}
-        boxSettings.innerHTML = '<h1 style=\"text-align:center;\"><b>Settings</b></h1> <hr style=\"border-color:inherit; margin: 0px -4px 8px\"></hr>';
+        boxSettings.innerHTML = '<h1 style=\"text-align:left;\"><b>Settings</b><span style=\"float:right;">v' + GM_info.script.version + '</span></h1> <hr style=\"border-color:inherit; margin: 0px -4px 8px\"></hr>';
         rareAlertButton.innerHTML = 'Rare drop sound';
         boxSettings.appendChild( rareAlertButton, boxSettings.firstChild );
         idleAlertButton.innerHTML = 'Idle sound';
@@ -403,8 +425,21 @@ function splitConsumables (list) { //Loop through a 2d array of consumables gene
     }
 }
 
+function parseTrackerComponent(){ //Parse the tracker component for current xp progress
+    let values = trackerComponent[0].innerText.split('\n');
+    let progress = values[values.length - 1].split(' / ');;
+    //console.log(values);
+    //console.log(progress);
+    trackedSkill.currentLevel = values[1].split(' / ')[0].slice(4);
+    trackedSkill.currentLevelXP = removeCommas(progress[0]);
+    trackedSkill.nextLevelXP = removeCommas(progress[1].slice(0, -3));
+    //console.log(trackedSkill.currentLevelXP, trackedSkill.nextLevelXP);
+}
+
+
 function parseCards(){ //Find all cards, parse necessary values, then store them properly formatted
     //console.log('parseCards: ' + trackedSkill.name);
+    parseTrackerComponent();
     for (let i = 0; i < cardList.length; i++){
         //console.log(i);
         //console.log(cardList[i].innerText);
@@ -412,7 +447,6 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
         //console.info(cardText);
 
         //Get coin count from Loot card
-
         let coinsFound = false;
         let bonesFound = false;
 
@@ -496,17 +530,69 @@ function trackerLoop() {
     }
 }
 
-function timerFormat(){
-    let seconds = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000)) % 60).toString().padStart(2, '0');
-    let minutes = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60)) % 60).toString().padStart(2, '0');
-    let hours = ((Math.trunc((Date.now() - (trackedSkill.startTime))/1000/60/60))).toString().padStart(2, '0');
+function timerFormat(startTime, endTime){ //Return time between two dates in readable format
+    let seconds = ((Math.trunc((endTime - startTime)/1000)) % 60).toString().padStart(2, '0');
+    let minutes = ((Math.trunc((endTime - startTime)/1000/60)) % 60).toString().padStart(2, '0');
+    let hours = ((Math.trunc((endTime - startTime)/1000/60/60)) % 24).toString().padStart(2, '0');
+    let days = ((Math.trunc((endTime - startTime)/1000/60/60/24))).toString();
 
-    if (hours > 0) {
-        return hours + ":" + minutes + ":" + seconds;
+    if (days > 0) {
+        return days + ':' + hours + ':' + minutes + ':' + seconds;
+    }
+    else if (hours > 0) {
+        return hours + ':' + minutes + ':' + seconds;
     }
     else {
-        return minutes + ":" + seconds;
+        return minutes + ':' + seconds;
     }
+}
+
+function timerVerbose(ms) {
+
+  var ago = Math.floor(ms / 1000);
+  var part = 0;
+
+  if (ago < 60) { return "any second!"; }
+  if (ago < 120) { return "any minute!"; }
+  if (ago < 3600) { //3600s = 1hr
+    while (ago >= 60) { ago -= 60; part += 1; }
+    return part + " minutes";
+  }
+    if (ago < 7200) { //7200s = 2hr
+        ago -= 3600; //subtract an hour and add it back in formatting for more precise time near deadline
+    while (ago >= 60) { ago -= 60; part += 1; }
+    return "1 hour and " + part + " minutes";
+  }
+
+  //if (ago < 7200) { return "over an hour"; } //7200sec = 120min
+  if (ago < 86400) { //86400sec = 24hrs
+    while (ago >= 3600) { ago -= 3600; part += 1; }
+    return part + " hours";
+  }
+
+  if (ago < 172800) { return "a day"; }
+  if (ago < 604800) {
+    while (ago >= 172800) { ago -= 172800; part += 1; }
+    return part + " days";
+  }
+
+  if (ago < 1209600) { return "a week"; }
+  if (ago < 2592000) {
+    while (ago >= 604800) { ago -= 604800; part += 1; }
+    return part + " weeks";
+  }
+
+  if (ago < 5184000) { return "a month"; }
+  if (ago < 31536000) { //31536000s = .99 years
+    while (ago >= 2592000) { ago -= 2592000; part += 1; }
+    return part + " months";
+  }
+
+  if (ago < 31557600) { // 45 years, approximately the epoch
+    return "over a year";
+  }
+
+  return "forever";
 }
 
 function getIcon(skill) {
@@ -519,10 +605,20 @@ function getIcon(skill) {
     }
 }
 
+function calcMilestone(givenLevel) { //Based on given level, return the next milestone level's total xp requirement
+    for (const [level, xp] of milestones) {
+        if (givenLevel < level) {
+            return [level, xp];
+        }
+    }
+}
+
+
 function displayBox(status) {
     //console.log('displayBox: ' + trackedSkill.name);
     let currentSkill = getCurrentSkill();
 
+    let elapsedTimeMs = ((Date.now() - trackedSkill.startTime)); //elapsed time in ms for calc
     let elapsedTimeMins = ((Date.now() - trackedSkill.startTime)/1000/60); //elapsed time in minutes for calc
     let elapsedTimeHours = ((Date.now() - trackedSkill.startTime)/1000/60/60); //elapsed time in minutes for calc
     let formattedTimeMins = Math.trunc(elapsedTimeMins); //elapsed time in minutes but formatted for display
@@ -530,6 +626,8 @@ function displayBox(status) {
     let earnedXp = trackedSkill.currentXp - trackedSkill.startingXp;
     let xpPerMinute = Math.floor(earnedXp/elapsedTimeMins);
     let xpPerHour = Math.floor(earnedXp/elapsedTimeHours);
+    let xpPerMs = earnedXp/elapsedTimeMs;
+    //console.log(xpPerMs);
 
     let usedArrows = trackedSkill.startingArrows - trackedSkill.currentArrows;
     let arrowsPerHour = Math.floor(usedArrows/elapsedTimeHours);
@@ -545,29 +643,56 @@ function displayBox(status) {
 
     let usedPots = trackedSkill.startingPots - trackedSkill.currentPots;
 
+    let requiredXP = trackedSkill.nextLevelXP - trackedSkill.currentLevelXP;
+    let estimatedLevelTime = requiredXP / xpPerMs;
+
+    let milestoneLevel = calcMilestone(trackedSkill.currentLevel); //[Level, Total XP]
+    let requiredXpMilestone = milestoneLevel[1] - trackedSkill.currentXp;
+    let estimatedMilestoneTime = requiredXpMilestone/xpPerMs;
+    //console.log(estimatedLevelTime);
+    //console.log(requiredXpMilestone);
+    //console.log((Date.now + estimatedLevelTime));
+    //(trackedSkill.currentLevel) - trackedSkill.currentXp);
+    //console.log(estimatedLevelTime);
+    //console.log(Date.now(), (Date.now() + estimatedLevelTime));
+
     let boxContents = '';
     //let boxTitle = '<div style=\"text-align:left; display:inline-block;\"><b> <img style=\"width:20px; object-fit:contain; image-rendering:pixelated\" src=\"assets/misc/alchemy.png\"> ' + trackedSkill.name + '<div style="margin-left:auto">' + timerFormat() + '</div></b></div>';
     //clip-path: polygon(2px 2px, 46px 2px, 46px 46px, 2px 46px);
     let boxTitle = '<div style="display:flex">' +
-        '<div><img style="height:20px; width:20px; image-rendering:crisp-edges; border-radius: 4px; border-color: white; " src="assets/misc/' + getIcon(trackedSkill.name) + '"></div>' +
-        ' <div><b> &nbsp; ' + trackedSkill.name + '</b></div>' +
-        '<div style="margin-left: auto;"> <b>' + timerFormat() + '</b> </div>' +
+        '<div><img style="display: flex; justify-content: left; align-items: center; height:24px; width:24px; border-radius: 4px; border-color: white; " src="assets/misc/' + getIcon(trackedSkill.name) + '"></div>' +
+        '<div style="display: flex; justify-content: center; align-items: center; height: 24px; margin-left: auto;"><b>' + trackedSkill.name + '</b></div>' +
+        '<div style="margin-left: auto;"> <b>' + timerFormat(trackedSkill.startTime, Date.now()) + '</b> </div>' +
         '</div>';
 
-    let boxDivider = '<hr style=\"border-color:inherit; margin: 0px -4px 4px\"></hr>';
-    let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;">XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> (' + xpPerHour.toLocaleString('en') +'/h)</span></p>';
-    let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> (' + coinsPerHour.toLocaleString('en') +'/h)</span></p>';
-    let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> (' + killsPerHour.toLocaleString('en') +'/h)</span></p>';
-    let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> (' + foodPerHour.toLocaleString('en') +'/h)</span></p>';
-    let boxArrows = '<p title="Total arrows consumed\" style=\"color:Wheat;">Arrows: ' + usedArrows.toLocaleString('en') + '<span style="float:right;"> (' + arrowsPerHour.toLocaleString('en') +'/h)</span></p>';
-    let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' + redirectText;
-  //  let boxSkillIcon = '<img style=\"width:10px; object-fit:contain\" src="assets/misc/defense.png">'
+    /*let boxTitle = '<div style="display:flex">' +
+        '<span><img style=" margin-left: auto; height:24px; width:24px; border-radius: 4px; border-color: white; " src="assets/misc/' + getIcon(trackedSkill.name) + '"></span>' +
+        ' <spawn><b>' + trackedSkill.name + '</b><br></span>' +
+        '<span> <b>' + timerFormat(trackedSkill.startTime, Date.now()) + '</b> </span>' +
+        '</div>'; */
+
+
+    let boxDivider = '<hr style=\"border-color:inherit; margin: 4px -4px 4px\"></hr>';
+    let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;">XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + xpPerHour.toLocaleString('en') +'/h)</span></p>';
+    //let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue;"> Next level: <span style=\"float:right;"> &#013;' + timerVerbose(estimatedLevelTime) +'</span></p>';
+    //let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue;"> Next Tier: <span style=\"float:right;"> &#013;' + timerVerbose(estimatedMilestoneTime) +'</span></p>';
+    let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue; text-align:center"> Level up in ' + timerVerbose(estimatedLevelTime) +'</p>';
+    let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue; text-align:center"> Tier up in ' + timerVerbose(estimatedMilestoneTime) +'</p>';
+    let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + coinsPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> &#013;(' + killsPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> &#013;(' + foodPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxArrows = '<p title="Total arrows consumed\" style=\"color:Wheat;">Arrows: ' + usedArrows.toLocaleString('en') + '<span style="float:right;"> &#013;(' + arrowsPerHour.toLocaleString('en') +'/h)</span></p>';
+    let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat(trackedSkill.startTime, Date.now()) + '</b><hr>' + redirectText;
+    //  let boxSkillIcon = '<img style=\"width:10px; object-fit:contain\" src="assets/misc/defense.png">'
 
     //        console.log(elapsedTimeMins);
 
     // If on correct skill page, show full details
     if (currentSkill == trackedSkill.name && isRunning == true && status == 'active') {
-        boxContents += boxTitle + boxDivider + boxXP;
+        boxContents += boxTitle + boxDivider;
+        if (earnedXp > 0){
+            boxContents += boxXP;
+        }
         if (earnedCoins > 0){
             boxContents += boxCoins;
         }
@@ -580,16 +705,11 @@ function displayBox(status) {
         if (usedArrows > 0){
             boxContents += boxArrows;
         }
-        //            '<img src="assets/misc/defense.png" width="10" height="10">' +
-        //            '<b>' + trackedSkill.name + " - " + formattedTimeMins + ':' + elapsedTimeSecsTimer + '</b><hr>' +
-
-        //        '<b>' + trackedSkill.name + " - " + timerFormat() + '</b><hr>' +
-        //            'XP earned: ' + earnedXp.toLocaleString('en') + ' (' + xpPerHour.toLocaleString('en') +'/h)<br>' +
-        //            'Enemy kills: ' + enemyKills.toLocaleString('en') + ' (' + killsPerHour.toLocaleString('en') +'/h)<br>' +
-        //            'Coins earned: ' + earnedCoins.toLocaleString('en') + ' (' + coinsPerHour.toLocaleString('en') +'/h)<br>' +
-        //           "Food used: " + usedFood.toLocaleString('en') + ' (' + foodPerHour.toLocaleString('en') +'/h)<br>' +
-        //           "Arrows used: " + usedArrows.toLocaleString('en') + ' (' + arrowsPerHour.toLocaleString('en') +'/h)<br>' +
+        if (earnedXp > 0){
+            boxContents += boxDivider + boxNextLevel + boxNextMilestone;
+        }
     }
+
     else if (status == "inactive" && isRunning == true){
         boxContents += boxTitle + boxDivider + redirectText;
     }
@@ -597,4 +717,3 @@ function displayBox(status) {
 }
 
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
-
