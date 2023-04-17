@@ -689,7 +689,6 @@ function displayBox(status) {
 
     // If on correct skill page, show full details
     if (currentSkill == trackedSkill.name && isRunning == true && status == 'active') {
-        boxContents += boxTitle + boxDivider;
         if (earnedXp > 0){
             boxContents += boxXP;
         }
@@ -709,11 +708,16 @@ function displayBox(status) {
             boxContents += boxDivider + boxNextLevel + boxNextMilestone;
         }
     }
-
     else if (status == "inactive" && isRunning == true){
-        boxContents += boxTitle + boxDivider + redirectText;
+        boxContents += redirectText;
     }
-    return boxContents;
+
+    if (boxContents == '') { //If no stats yet, continue to show loading
+        return loadingText;
+    }
+
+    return boxTitle + boxDivider + boxContents;
 }
+
 
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
