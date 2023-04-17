@@ -1,5 +1,12 @@
 # Changelog
 
+### Version 0.5.1
+
+- Added ETA for next level/tier
+- Fixed a bug with the timer
+- Minor formatting changes
+---
+
 ### Version 0.5
 
 - Dynamically show stats when appropriate
