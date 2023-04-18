@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.5.1
+// @version      0.5.2
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
