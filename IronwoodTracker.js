@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.5.2
+// @version      0.5.3
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -54,7 +54,7 @@ let boxStyle =
     ' opacity: .6;' +
     ' float: right;' +
     ' object-fit: none;' +
-    ' max-height: 230px;' +
+    ' max-height: 400px;' +
     ' max-width: 350px;' ;
 
 //Button style format
@@ -94,7 +94,7 @@ let buttonSettingsStyle =
 var box = document.createElement( 'div' );
 document.body.appendChild( box );
 box.style.cssText = boxStyle;
-box.style.minWidth = '300px';
+box.style.minWidth = '250px';
 box.innerHTML = 'Click &#8634; to start tracking';
 box.style.bottom = '43px';
 box.style.right = '24px';
@@ -111,8 +111,8 @@ document.body.appendChild( box2 );
 var boxSettings = document.createElement( 'div' );
 boxSettings.style.cssText = boxStyle;
 boxSettings.style.minWidth = '30px';
-boxSettings.style.bottom = '275px';
-boxSettings.style.right = '24px';
+boxSettings.style.bottom = '43px';
+boxSettings.style.right = '354px';
 
 //Button to minimize tracker
 var closeButton = document.createElement( 'div' );
@@ -213,7 +213,7 @@ const cardList = document.getElementsByClassName('card');
 const trackerComponent = document.getElementsByTagName("tracker-component");
 
 //instantiate variables for tracker
-let startedTrackerBeforeSkill = false;
+//let startedTrackerBeforeSkill = false;
 var hasRun = false;
 var hasPlayed = false;
 var notifStatus = false;
@@ -243,6 +243,9 @@ const trackedSkill = {
     currentLevelXP: 0,
     nextLevelXP: 0,
     startTime: new Date(),
+    coinsInitialized: false,
+    bonesInitialized: false,
+    potsInitialized: false,
 
     reset: function() {
         this.name = '';
@@ -250,12 +253,12 @@ const trackedSkill = {
         this.currentXp = 0;
         this.startingFood = 0;
         this.currentFood = 0;
-        this.startingCombatPotions = 0,
-        this.currentCombatPotions = 0,
-        this.startingGatheringPotions = 0,
-        this.currentGatheringPotions = 0,
-        this.startingCraftingPotions = 0,
-        this.currentCraftingPotions = 0,
+        this.startingCombatPotions = 0;
+        this.currentCombatPotions = 0;
+        this.startingGatheringPotions = 0;
+        this.currentGatheringPotions = 0;
+        this.startingCraftingPotions = 0;
+        this.currentCraftingPotions = 0;
         this.startingArrows = 0;
         this.currentArrows = 0;
         this.startingCoins = 0;
@@ -268,6 +271,9 @@ const trackedSkill = {
         this.currentLevelXP = 0;
         this.nextLevelXP = 0;
         this.startTime = new Date();
+        this.coinsInitialized = false;
+        this.bonesInitialized = false;
+        this.potsInitialized = false;
     }
 
 };
@@ -280,6 +286,7 @@ function resetTracker(){ //Reset all stats in the tracker
     if (checkAllowedSkill(currentSkill)) {
         trackedSkill.reset();
         trackedSkill.name = getCurrentSkill();
+        initializeCards();
         box.innerHTML = loadingText;
         isRunning = true;
         hasRun = true;
@@ -467,10 +474,38 @@ function parseTrackerComponent(){ //Parse the tracker component for current xp p
     //console.log(trackedSkill.currentLevelXP, trackedSkill.nextLevelXP);
 }
 
+function initializeCards(){
+    for (let i = 0; i < cardList.length; i++){
+        let cardText = cardList[i].innerText.split('\n');
+
+        if (cardText[1] == 'Coins'){ //Get starting coins
+            trackedSkill.currentCoins = removeCommas(cardText[2]);
+            trackedSkill.startingCoins = trackedSkill.currentCoins;
+            console.log('initial coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
+        }
+        if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
+            trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
+            trackedSkill.startingKills = trackedSkill.currentKills;
+            console.log('initial kills', trackedSkill.startingKills, trackedSkill.currentKills);
+        }
+
+        //Get food, arrow, potion count from Consumables card
+        if (cardText[0] == 'Consumables'){
+            splitConsumables(groupArr(cardText.slice(1), 3));
+        }
+        //Get skill xp from Stats card
+        if (cardText[0] == 'Stats'){
+            trackedSkill.currentXp = removeCommas(cardText[cardText.length-1].slice(0, -3));
+            trackedSkill.startingXp = trackedSkill.currentXp;
+        }
+    }
+}
+
+
+
 
 function parseCards(){ //Find all cards, parse necessary values, then store them properly formatted
     //console.log('parseCards: ' + trackedSkill.name);
-    parseTrackerComponent();
     for (let i = 0; i < cardList.length; i++){
         //console.log(i);
         //console.log(cardList[i].innerText);
@@ -495,42 +530,37 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
             }
 
             if (cardText[1] == 'Coins'){
-                coinsFound = true;
+                //coinsFound = true;
                 trackedSkill.currentCoins = removeCommas(cardText[2]);
+                                console.log('coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
                 //console.info("Set currentCoins to " + trackedSkill.currentCoins);
                 //console.info('coins: ' + currentCoins);
-                if (trackedSkill.startingCoins == 0 && !startedTrackerBeforeSkill){
-                    trackedSkill.startingCoins = trackedSkill.currentCoins;
-                }
-            }
-
-            for (const bone of boneList) {
-                const boneIndex = cardText.indexOf(bone);
-                if (boneIndex > 0) {
-                    bonesFound = true;
-                    trackedSkill.currentKills = removeCommas(cardText[boneIndex + 1]);
-                    if (trackedSkill.startingKills == 0 && !startedTrackerBeforeSkill) {
-                        trackedSkill.startingKills = trackedSkill.currentKills;
-                    }
-                    break;
-                }
-            }
-
-            if (!coinsFound && !bonesFound) {
-                startedTrackerBeforeSkill = true;
+                //  if (trackedSkill.coinsInitialized == false ){
+                //   trackedSkill.startingCoins = trackedSkill.currentCoins;
+                //     console.log(trackedSkill.startingCoins, trackedSkill.currentCoins);
+                //    trackedSkill.coinsInitialized = true;
             }
         }
+
+        if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
+            trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
+            console.log('kills', trackedSkill.startingKills, trackedSkill.currentKills);
+        }
+
+        //            if (!coinsFound && !bonesFound) {
+        //                startedTrackerBeforeSkill = true;
+        //            }
         //Get food, arrow, potion count from Consumables card
-        else if (cardText[0] == 'Consumables'){
+        if (cardText[0] == 'Consumables'){
             splitConsumables(groupArr(cardText.slice(1), 3));
             //console.info('consumables:' + consumables);
-            if (!potionsFound) {
-                startedTrackerBeforeSkill = true;
-            }
+            //            if (!potionsFound) {
+            //                startedTrackerBeforeSkill = true;
+            //            }
 
         }
         //Get skill xp from Stats card
-        else if (cardText[0] == 'Stats'){
+        if (cardText[0] == 'Stats'){
             trackedSkill.currentXp = removeCommas(cardText[cardText.length-1].slice(0, -3));
             //console.info("Set currentXp to " + trackedSkill.currentXp);
             //console.info('xp: ' + currentXp);
@@ -539,8 +569,8 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
             }
         }
     }
-    return;
 }
+
 
 
 function trackerLoop() {
@@ -548,6 +578,7 @@ function trackerLoop() {
 
     if (isRunning == true && boxToggleState == true) {
         if (trackedSkill.name == currentSkill) {
+            parseTrackerComponent();
             parseCards();
             box.innerHTML = displayBox("active");
         }
@@ -596,7 +627,7 @@ function timerVerbose(ms) {
     if (ago < 7200) { //7200s = 2hr
         ago -= 3600; //subtract an hour and add it back in formatting for more precise time near deadline
     while (ago >= 60) { ago -= 60; part += 1; }
-    return "1 hour and " + part + " minutes";
+    return "1 hour, " + part + " minutes";
   }
 
   //if (ago < 7200) { return "over an hour"; } //7200sec = 120min
@@ -626,7 +657,6 @@ function timerVerbose(ms) {
   if (ago < 31557600) { // 45 years, approximately the epoch
     return "over a year";
   }
-
   return "forever";
 }
 
@@ -707,13 +737,6 @@ function displayBox(status) {
         '<div style="margin-left: auto;"> <b>' + timerFormat(trackedSkill.startTime, Date.now()) + '</b> </div>' +
         '</div>';
 
-    /*let boxTitle = '<div style="display:flex">' +
-        '<span><img style=" margin-left: auto; height:24px; width:24px; border-radius: 4px; border-color: white; " src="assets/misc/' + getIcon(trackedSkill.name) + '"></span>' +
-        ' <spawn><b>' + trackedSkill.name + '</b><br></span>' +
-        '<span> <b>' + timerFormat(trackedSkill.startTime, Date.now()) + '</b> </span>' +
-        '</div>'; */
-
-
     let boxDivider = '<hr style=\"border-color:inherit; margin: 4px -4px 4px\"></hr>';
     let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;">XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + xpPerHour.toLocaleString('en') +'/h)</span></p>';
     //let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue;"> Next level: <span style=\"float:right;"> &#013;' + timerVerbose(estimatedLevelTime) +'</span></p>';
@@ -723,14 +746,11 @@ function displayBox(status) {
     let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + coinsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> &#013;(' + killsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> &#013;(' + foodPerHour.toLocaleString('en') +'/h)</span></p>';
-    const boxCombatPotions = '<p title="Total combat potions consumed\" style=\"color:Orange;">Combat Potions: ' + usedCombatPotions.toLocaleString('en') + '<span style="float:right;"> (' + combatPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
-    const boxGatheringPotions = '<p title="Total gathering potions consumed\" style=\"color:Pink;">Gathering Potions: ' + usedGatheringPotions.toLocaleString('en') + '<span style="float:right;"> (' + gatheringPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
-    const boxCraftingPotions = '<p title="Total crafting potions consumed\" style=\"color:LightBlue;">Crafting Potions: ' + usedCraftingPotions.toLocaleString('en') + '<span style="float:right;"> (' + craftingPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
+    const boxCombatPotions = '<p title="Total combat potions consumed\" style=\"color:Orange;">Combat Pots: ' + usedCombatPotions.toLocaleString('en') + '<span style="float:right;"> (' + combatPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
+    const boxGatheringPotions = '<p title="Total gathering potions consumed\" style=\"color:Pink;">Gathering Pots: ' + usedGatheringPotions.toLocaleString('en') + '<span style="float:right;"> (' + gatheringPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
+    const boxCraftingPotions = '<p title="Total crafting potions consumed\" style=\"color:LightBlue;">Crafting Pots: ' + usedCraftingPotions.toLocaleString('en') + '<span style="float:right;"> (' + craftingPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxArrows = '<p title="Total arrows consumed\" style=\"color:Wheat;">Arrows: ' + usedArrows.toLocaleString('en') + '<span style="float:right;"> &#013;(' + arrowsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat(trackedSkill.startTime, Date.now()) + '</b><hr>' + redirectText;
-    //  let boxSkillIcon = '<img style=\"width:10px; object-fit:contain\" src="assets/misc/defense.png">'
-
-    //        console.log(elapsedTimeMins);
 
     // If on correct skill page, show full details
     if (currentSkill == trackedSkill.name && isRunning == true && status == 'active') {
@@ -759,7 +779,12 @@ function displayBox(status) {
             boxContents += boxArrows;
         }
         if (earnedXp > 0){
-            boxContents += boxDivider + boxNextLevel + boxNextMilestone;
+            boxContents += boxDivider + boxNextLevel;
+            //console.log(milestoneLevel[0]);
+            //console.log(trackedSkill.currentLevel);
+            if ((milestoneLevel[0] -1) != trackedSkill.currentLevel){ //Don't display milestone progress if next tier is only 1 level away
+                boxContents += boxNextMilestone;
+            }
         }
     }
     else if (status == "inactive" && isRunning == true){
