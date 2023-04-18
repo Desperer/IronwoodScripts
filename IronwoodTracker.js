@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.5.1
+// @version      0.5.2
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -94,7 +94,7 @@ let buttonSettingsStyle =
 var box = document.createElement( 'div' );
 document.body.appendChild( box );
 box.style.cssText = boxStyle;
-box.style.minWidth = '200px';
+box.style.minWidth = '300px';
 box.innerHTML = 'Click &#8634; to start tracking';
 box.style.bottom = '43px';
 box.style.right = '24px';
@@ -184,6 +184,18 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 
 const boneList = ['Bone', 'Fang', 'Medium Bone', 'Medium Fang', 'Large Bone', 'Large Fang', 'Giant Bone'];
 
+const combatPotionList = ['Combat Potion', 'Double Attack Potion', 'Resistance Potion', 'Super Combat Potion',
+                          'Super Double Attack Potion', 'Super Resistance Potion', 'Divine Combat Potion',
+                          'Divine Double Attack Potion', 'Divine Resistance Potion'];
+
+const gatheringPotionList = ['Gather Level Potion', 'Gather Speed Potion', 'Super Gather Level Potion',
+                             'Super Gather Speed Potion', 'Divine Gather Level Potion',
+                             'Divine Gather Speed Potion'];
+
+const craftingPotionList = ['Craft Level Potion', 'Craft Speed Potion', 'Super Craft Level Potion',
+                            'Super Craft Speed Potion', 'Divine Craft Level Potion',
+                            'Divine Craft Speed Potion'];
+
 const milestoneLevels = [10, 25, 40, 55, 70, 85, 100];
 const milestoneXP = [3794, 93750, 485725, 1480644, 3443692, 6794343, 12000000];
 
@@ -213,8 +225,12 @@ const trackedSkill = {
     currentXp: 0,
     startingFood: 0,
     currentFood: 0,
-    startingPots: 0,
-    currentPots: 0,
+    startingCombatPotions: 0,
+    currentCombatPotions: 0,
+    startingGatheringPotions: 0,
+    currentGatheringPotions: 0,
+    startingCraftingPotions: 0,
+    currentCraftingPotions: 0,
     startingArrows: 0,
     currentArrows: 0,
     startingCoins: 0,
@@ -234,8 +250,12 @@ const trackedSkill = {
         this.currentXp = 0;
         this.startingFood = 0;
         this.currentFood = 0;
-        this.startingPots = 0;
-        this.currentPots = 0;
+        this.startingCombatPotions = 0,
+        this.currentCombatPotions = 0,
+        this.startingGatheringPotions = 0,
+        this.currentGatheringPotions = 0,
+        this.startingCraftingPotions = 0,
+        this.currentCraftingPotions = 0,
         this.startingArrows = 0;
         this.currentArrows = 0;
         this.startingCoins = 0;
@@ -401,21 +421,32 @@ function splitConsumables (list) { //Loop through a 2d array of consumables gene
     for (let i = 0; i <= list.length-1; i++) {
         //        console.log("i" + list[i]);
         //        console.log("i0" + list[i][0]);
-        if (list[i][0].includes('Potion')) {
-            trackedSkill.currentPots = removeCommas(list[i][1]);
-            //console.info("Set currentPots to " + trackedSkill.currentPots);
-            if (trackedSkill.startingPots == 0){
-                trackedSkill.startingPots = trackedSkill.currentPots;
+        if (combatPotionList.indexOf(list[i][0]) > 0) {
+            trackedSkill.currentCombatPotions = removeCommas(list[i][1]);
+            if (trackedSkill.startingCombatPotions == 0) {
+                trackedSkill.startingCombatPotions = trackedSkill.currentCombatPotions
             }
         }
-        else if (list[i][2].includes('HP')) {
+        if (gatheringPotionList.indexOf(list[i][0]) > 0) {
+            trackedSkill.currentGatheringPotions = removeCommas(list[i][1]);
+            if (trackedSkill.startingGatheringPotions == 0) {
+                trackedSkill.startingGatheringPotions = trackedSkill.currentGatheringPotions
+            }
+        }
+        if (craftingPotionList.indexOf(list[i][0]) > 0) {
+            trackedSkill.currentCraftingPotions = removeCommas(list[i][1]);
+            if (trackedSkill.startingCraftingPotions == 0) {
+                trackedSkill.startingCraftingPotions = trackedSkill.currentCraftingPotions
+            }
+        }
+        if (list[i][2].includes('HP')) {
             trackedSkill.currentFood = removeCommas(list[i][1]);
             //console.info("Set currentFood to " + trackedSkill.currentFood);
             if (trackedSkill.startingFood == 0){
                 trackedSkill.startingFood = trackedSkill.currentFood;
             }
         }
-        else if (list[i][0].includes('Arrow')) {
+        if (list[i][0].includes('Arrow')) {
             trackedSkill.currentArrows = removeCommas(list[i][1]);
             //console.info("Set currentArrows to " + trackedSkill.currentArrows);
             if (trackedSkill.startingArrows == 0){
@@ -449,6 +480,7 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
         //Get coin count from Loot card
         let coinsFound = false;
         let bonesFound = false;
+        let potionsFound = false;
 
         if (cardText[0] == 'Loot'){
             for (let item = 0; item < cardText.length; item++) {
@@ -492,6 +524,9 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
         else if (cardText[0] == 'Consumables'){
             splitConsumables(groupArr(cardText.slice(1), 3));
             //console.info('consumables:' + consumables);
+            if (!potionsFound) {
+                startedTrackerBeforeSkill = true;
+            }
 
         }
         //Get skill xp from Stats card
@@ -641,7 +676,14 @@ function displayBox(status) {
     let enemyKills = trackedSkill.currentKills - trackedSkill.startingKills;
     let killsPerHour = Math.floor(enemyKills/elapsedTimeHours);
 
-    let usedPots = trackedSkill.startingPots - trackedSkill.currentPots;
+    const usedCombatPotions = trackedSkill.startingCombatPotions - trackedSkill.currentCombatPotions;
+    const combatPotionsPerHour = Math.floor(usedCombatPotions / elapsedTimeHours);
+
+    const usedGatheringPotions = trackedSkill.startingGatheringPotions - trackedSkill.currentGatheringPotions;
+    const gatheringPotionsPerHour = Math.floor(usedGatheringPotions / elapsedTimeHours);
+
+    const usedCraftingPotions = trackedSkill.startingCraftingPotions - trackedSkill.currentCraftingPotions;
+    const craftingPotionsPerHour = Math.floor(usedCraftingPotions / elapsedTimeHours);
 
     let requiredXP = trackedSkill.nextLevelXP - trackedSkill.currentLevelXP;
     let estimatedLevelTime = requiredXP / xpPerMs;
@@ -681,6 +723,9 @@ function displayBox(status) {
     let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + coinsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> &#013;(' + killsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> &#013;(' + foodPerHour.toLocaleString('en') +'/h)</span></p>';
+    const boxCombatPotions = '<p title="Total combat potions consumed\" style=\"color:Orange;">Combat Potions: ' + usedCombatPotions.toLocaleString('en') + '<span style="float:right;"> (' + combatPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
+    const boxGatheringPotions = '<p title="Total gathering potions consumed\" style=\"color:Pink;">Gathering Potions: ' + usedGatheringPotions.toLocaleString('en') + '<span style="float:right;"> (' + gatheringPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
+    const boxCraftingPotions = '<p title="Total crafting potions consumed\" style=\"color:LightBlue;">Crafting Potions: ' + usedCraftingPotions.toLocaleString('en') + '<span style="float:right;"> (' + craftingPotionsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxArrows = '<p title="Total arrows consumed\" style=\"color:Wheat;">Arrows: ' + usedArrows.toLocaleString('en') + '<span style="float:right;"> &#013;(' + arrowsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat(trackedSkill.startTime, Date.now()) + '</b><hr>' + redirectText;
     //  let boxSkillIcon = '<img style=\"width:10px; object-fit:contain\" src="assets/misc/defense.png">'
@@ -689,7 +734,6 @@ function displayBox(status) {
 
     // If on correct skill page, show full details
     if (currentSkill == trackedSkill.name && isRunning == true && status == 'active') {
-        boxContents += boxTitle + boxDivider;
         if (earnedXp > 0){
             boxContents += boxXP;
         }
@@ -702,6 +746,15 @@ function displayBox(status) {
         if (usedFood > 0){
             boxContents += boxFood;
         }
+        if (usedCombatPotions > 0){
+            boxContents += boxCombatPotions;
+        }
+        if (usedGatheringPotions > 0){
+            boxContents += boxGatheringPotions;
+        }
+        if (usedCraftingPotions > 0){
+            boxContents += boxCraftingPotions;
+        }
         if (usedArrows > 0){
             boxContents += boxArrows;
         }
@@ -709,11 +762,16 @@ function displayBox(status) {
             boxContents += boxDivider + boxNextLevel + boxNextMilestone;
         }
     }
-
     else if (status == "inactive" && isRunning == true){
-        boxContents += boxTitle + boxDivider + redirectText;
+        boxContents += redirectText;
     }
-    return boxContents;
+
+    if (boxContents == '') { //If no stats yet, continue to show loading
+        return loadingText;
+    }
+
+    return boxTitle + boxDivider + boxContents;
 }
+
 
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater

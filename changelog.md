@@ -1,5 +1,10 @@
 # Changelog
 
+###Version 0.5.2
+- Added potion tracking
+- Tracker will no longer load before any stats have appeared
+- Minor formatting changes
+
 ### Version 0.5.1
 
 - Added ETA for next level/tier
