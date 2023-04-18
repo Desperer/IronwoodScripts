@@ -478,17 +478,21 @@ function initializeCards(){
     for (let i = 0; i < cardList.length; i++){
         let cardText = cardList[i].innerText.split('\n');
 
-        if (cardText[1] == 'Coins'){ //Get starting coins
-            trackedSkill.currentCoins = removeCommas(cardText[2]);
-            trackedSkill.startingCoins = trackedSkill.currentCoins;
-            //console.log('initial coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
-        }
-        if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
-            trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
-            trackedSkill.startingKills = trackedSkill.currentKills;
-            //console.log('initial kills', trackedSkill.startingKills, trackedSkill.currentKills);
-        }
+        if (cardText[0] == 'Loot'){ //If loot card, loop through all items and record coins/kills
 
+            for (let j=0; j < cardText.length; j++) {
+                if (cardText[j] == 'Coins'){ //Get starting coins
+                    trackedSkill.currentCoins = removeCommas(cardText[j+1]);
+                    trackedSkill.startingCoins = trackedSkill.currentCoins;
+                    //console.log('initial coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
+                }
+                if (cardText[j].includes('Bone') || cardText[j].includes('Fang')){ //Get starting kills
+                    trackedSkill.currentKills = removeCommas(cardText[j+1]);
+                    trackedSkill.startingKills = trackedSkill.currentKills;
+                    //console.log('initial kills', trackedSkill.startingKills, trackedSkill.currentKills);
+                }
+            }
+        }
         //Get food, arrow, potion count from Consumables card
         if (cardText[0] == 'Consumables'){
             splitConsumables(groupArr(cardText.slice(1), 3));
@@ -504,13 +508,14 @@ function initializeCards(){
 
 
 
+
 function parseCards(){ //Find all cards, parse necessary values, then store them properly formatted
     //console.log('parseCards: ' + trackedSkill.name);
     for (let i = 0; i < cardList.length; i++){
         //console.log(i);
         //console.log(cardList[i].innerText);
         let cardText = cardList[i].innerText.split('\n');
-        //console.info(cardText);
+        console.info(cardText);
 
 
         if (cardText[0] == 'Loot'){
@@ -537,12 +542,12 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
                 //    trackedSkill.coinsInitialized = true;
             }
         }
-
-        if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
-            trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
-            //console.log('kills', trackedSkill.startingKills, trackedSkill.currentKills);
+        if (cardText.length > 3) {
+            if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
+                trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
+                //console.log('kills', trackedSkill.startingKills, trackedSkill.currentKills);
+            }
         }
-
         //Get food, arrow, potion count from Consumables card
         if (cardText[0] == 'Consumables'){
             splitConsumables(groupArr(cardText.slice(1), 3));
