@@ -481,12 +481,12 @@ function initializeCards(){
         if (cardText[1] == 'Coins'){ //Get starting coins
             trackedSkill.currentCoins = removeCommas(cardText[2]);
             trackedSkill.startingCoins = trackedSkill.currentCoins;
-            console.log('initial coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
+            //console.log('initial coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
         }
         if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
             trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
             trackedSkill.startingKills = trackedSkill.currentKills;
-            console.log('initial kills', trackedSkill.startingKills, trackedSkill.currentKills);
+            //console.log('initial kills', trackedSkill.startingKills, trackedSkill.currentKills);
         }
 
         //Get food, arrow, potion count from Consumables card
@@ -512,10 +512,6 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
         let cardText = cardList[i].innerText.split('\n');
         //console.info(cardText);
 
-        //Get coin count from Loot card
-        let coinsFound = false;
-        let bonesFound = false;
-        let potionsFound = false;
 
         if (cardText[0] == 'Loot'){
             for (let item = 0; item < cardText.length; item++) {
@@ -532,7 +528,7 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
             if (cardText[1] == 'Coins'){
                 //coinsFound = true;
                 trackedSkill.currentCoins = removeCommas(cardText[2]);
-                                console.log('coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
+                //console.log('coins', trackedSkill.startingCoins, trackedSkill.currentCoins);
                 //console.info("Set currentCoins to " + trackedSkill.currentCoins);
                 //console.info('coins: ' + currentCoins);
                 //  if (trackedSkill.coinsInitialized == false ){
@@ -544,19 +540,13 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
 
         if (cardText[cardText.length - 3].includes('Bone') || cardText[cardText.length - 3].includes('Fang')){ //Get starting kills
             trackedSkill.currentKills = removeCommas(cardText[cardText.length - 2]);
-            console.log('kills', trackedSkill.startingKills, trackedSkill.currentKills);
+            //console.log('kills', trackedSkill.startingKills, trackedSkill.currentKills);
         }
 
-        //            if (!coinsFound && !bonesFound) {
-        //                startedTrackerBeforeSkill = true;
-        //            }
         //Get food, arrow, potion count from Consumables card
         if (cardText[0] == 'Consumables'){
             splitConsumables(groupArr(cardText.slice(1), 3));
             //console.info('consumables:' + consumables);
-            //            if (!potionsFound) {
-            //                startedTrackerBeforeSkill = true;
-            //            }
 
         }
         //Get skill xp from Stats card
