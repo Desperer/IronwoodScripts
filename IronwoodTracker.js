@@ -180,7 +180,7 @@ const craftPages = ['Smelting', 'Smithing', 'Forging', 'Alchemy', 'Cooking' ];
 const combatPages = ['One-handed', 'Two-handed', 'Ranged', 'Defense' ];
 
 const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market', 'Quests', 'Leaderboards', 'Changelog',
-                          'Settings', 'Discord', 'Reddit', 'Patreon', 'Rules', 'Terms of Use', 'Privacy Policy'];
+                          'Settings', 'Discord', 'Reddit', 'Patreon', 'Rules', 'Terms of Use', 'Privacy Policy', 'Guild'];
 
 const boneList = ['Bone', 'Fang', 'Medium Bone', 'Medium Fang', 'Large Bone', 'Large Fang', 'Giant Bone'];
 
@@ -195,9 +195,6 @@ const gatheringPotionList = ['Gather Level Potion', 'Gather Speed Potion', 'Supe
 const craftingPotionList = ['Craft Level Potion', 'Craft Speed Potion', 'Super Craft Level Potion',
                             'Super Craft Speed Potion', 'Divine Craft Level Potion',
                             'Divine Craft Speed Potion'];
-
-const milestoneLevels = [10, 25, 40, 55, 70, 85, 100];
-const milestoneXP = [3794, 93750, 485725, 1480644, 3443692, 6794343, 12000000];
 
 const milestones = new Map([ //Level : Total XP Required
   [10, 3794],
