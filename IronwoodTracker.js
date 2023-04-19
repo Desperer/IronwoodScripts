@@ -6,6 +6,7 @@
 // @author       Des
 // @match        https://ironwoodrpg.com/*
 // @icon         https://github.com/Desperer/IronwoodScripts/blob/main/icon/IronwoodSword.png?raw=true
+// @require      https://unpkg.com/timeago.js/dist/timeago.min.js
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
@@ -51,7 +52,7 @@ let boxStyle =
     ' padding: 4px;' +
     ' border-radius: 5px;' +
     ' position: fixed;' +
-    ' opacity: .6;' +
+    ' opacity: .7;' +
     ' float: right;' +
     ' object-fit: none;' +
     ' max-height: 400px;' +
@@ -152,8 +153,6 @@ End UI components
 ------------------------
 */
 
-
-
 //Variables you should not change yet
 var boxToggleState = true; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
 var boxSettingsToggleState = false; // Default false keeps the settings page hidden on pageload, true would show settings box on startup but is not yet properly implemented
@@ -167,7 +166,6 @@ var idleAlert;
     rareAlert = await GM.getValue('rareAlert', false);
     idleAlert = await GM.getValue('idleAlert', false);
 })();
-
 
 //Messages to display
 const loadingText = 'Loading...';
@@ -275,7 +273,6 @@ const trackedSkill = {
 
 };
 
-
 function resetTracker(){ //Reset all stats in the tracker
     stopSound();
     hasPlayed = false;
@@ -319,7 +316,6 @@ function hideTracker(){ //minimize the tracker UI
 
     }
 }
-
 
 function hideSettings(){ //minimize the tracker UI
     stopSound();
@@ -372,9 +368,6 @@ function toggleIdleAlert(){ //toggle sound alert for rare drop
     }
 }
 
-
-
-
 function playSound() {
     rareDropSound.play();
 }
@@ -389,7 +382,6 @@ function idlePlaySound() {
     }
 }
 
-
 function checkAllowedSkill (skill) { //return true if the skill is a valid skill (not blacklisted menu options)
     if (blacklistedPages.includes(skill)){
         return false;
@@ -402,7 +394,6 @@ function checkAllowedSkill (skill) { //return true if the skill is a valid skill
 function getCurrentSkill() { //Return the name of the skill currently in view
     return document.getElementsByClassName('title')[0].innerText;
 }
-
 
 function removeCommas (string) { //Remove commas from a string and return it as a number
     return Number(string.replace(/,/g,""));
@@ -502,17 +493,13 @@ function initializeCards(){
     }
 }
 
-
-
-
-
 function parseCards(){ //Find all cards, parse necessary values, then store them properly formatted
     //console.log('parseCards: ' + trackedSkill.name);
     for (let i = 0; i < cardList.length; i++){
         //console.log(i);
         //console.log(cardList[i].innerText);
         let cardText = cardList[i].innerText.split('\n');
-        console.info(cardText);
+        //console.info(cardText);
 
 
         if (cardText[0] == 'Loot'){
@@ -563,8 +550,6 @@ function parseCards(){ //Find all cards, parse necessary values, then store them
     }
 }
 
-
-
 function trackerLoop() {
     let currentSkill = getCurrentSkill();
 
@@ -610,8 +595,7 @@ function timerVerbose(ms) {
   var ago = Math.floor(ms / 1000);
   var part = 0;
 
-  if (ago < 60) { return "any second!"; }
-  if (ago < 120) { return "any minute!"; }
+  if (ago < 90) { return "a moment"; }
   if (ago < 3600) { //3600s = 1hr
     while (ago >= 60) { ago -= 60; part += 1; }
     return part + " minutes";
@@ -628,19 +612,19 @@ function timerVerbose(ms) {
     return part + " hours";
   }
 
-  if (ago < 172800) { return "a day"; }
-  if (ago < 604800) {
+  if (ago < 172800) { return "over a day"; }
+  if (ago < 604800) { //604800s = 7days
     while (ago >= 172800) { ago -= 172800; part += 1; }
     return part + " days";
   }
 
-  if (ago < 1209600) { return "a week"; }
+  if (ago < 1209600) { return "over a week"; }
   if (ago < 2592000) {
     while (ago >= 604800) { ago -= 604800; part += 1; }
     return part + " weeks";
   }
 
-  if (ago < 5184000) { return "a month"; }
+  if (ago < 5184000) { return "over a month"; }
   if (ago < 31536000) { //31536000s = .99 years
     while (ago >= 2592000) { ago -= 2592000; part += 1; }
     return part + " months";
@@ -670,14 +654,14 @@ function calcMilestone(givenLevel) { //Based on given level, return the next mil
     }
 }
 
-
 function displayBox(status) {
     //console.log('displayBox: ' + trackedSkill.name);
     let currentSkill = getCurrentSkill();
 
-    let elapsedTimeMs = ((Date.now() - trackedSkill.startTime)); //elapsed time in ms for calc
-    let elapsedTimeMins = ((Date.now() - trackedSkill.startTime)/1000/60); //elapsed time in minutes for calc
-    let elapsedTimeHours = ((Date.now() - trackedSkill.startTime)/1000/60/60); //elapsed time in minutes for calc
+    let elapsedTimeMs = Math.abs(Date.now() - trackedSkill.startTime); //elapsed time in ms for calc
+    console.log('elapsted time sec ', elapsedTimeMs/1000);
+    let elapsedTimeMins = elapsedTimeMs/1000/60; //elapsed time in minutes for calc
+    let elapsedTimeHours = elapsedTimeMs/1000/60/60; //elapsed time in hours for calc
     let formattedTimeMins = Math.trunc(elapsedTimeMins); //elapsed time in minutes but formatted for display
     //    console.log(trackedSkill.currentXp);
     let earnedXp = trackedSkill.currentXp - trackedSkill.startingXp;
@@ -711,8 +695,11 @@ function displayBox(status) {
     let estimatedLevelTime = requiredXP / xpPerMs;
 
     let milestoneLevel = calcMilestone(trackedSkill.currentLevel); //[Level, Total XP]
+    console.log(milestoneLevel)
     let requiredXpMilestone = milestoneLevel[1] - trackedSkill.currentXp;
+    console.log('requirexpmilestone: ', requiredXpMilestone, 'currentXp:', trackedSkill.currentXp,  )
     let estimatedMilestoneTime = requiredXpMilestone/xpPerMs;
+    console.log('estimated milestone time: ', estimatedMilestoneTime/1000)
     //console.log(estimatedLevelTime);
     //console.log(requiredXpMilestone);
     //console.log((Date.now + estimatedLevelTime));
@@ -731,10 +718,8 @@ function displayBox(status) {
 
     let boxDivider = '<hr style=\"border-color:inherit; margin: 4px -4px 4px\"></hr>';
     let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;">XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + xpPerHour.toLocaleString('en') +'/h)</span></p>';
-    //let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue;"> Next level: <span style=\"float:right;"> &#013;' + timerVerbose(estimatedLevelTime) +'</span></p>';
-    //let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue;"> Next Tier: <span style=\"float:right;"> &#013;' + timerVerbose(estimatedMilestoneTime) +'</span></p>';
-    let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue; text-align:center"> Level up in ' + timerVerbose(estimatedLevelTime) +'</p>';
-    let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue; text-align:center"> Tier up in ' + timerVerbose(estimatedMilestoneTime) +'</p>';
+    let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue; text-align:center"> Level up in ' + timeago.format(Date.now() + estimatedLevelTime) + ' hours: ' + estimatedLevelTime/1000 +'</p>';
+    let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue; text-align:center"> Tier up in ' + timeago.format(Date.now() + estimatedMilestoneTime) + ' hours: ' + estimatedMilestoneTime/1000 +'</p>';
     let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + coinsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> &#013;(' + killsPerHour.toLocaleString('en') +'/h)</span></p>';
     let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> &#013;(' + foodPerHour.toLocaleString('en') +'/h)</span></p>';
