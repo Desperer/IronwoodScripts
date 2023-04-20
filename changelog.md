@@ -1,4 +1,7 @@
 # Changelog
+###Version 0.5.3
+- Corrected math on Level/Milestone ETAs
+- 
 
 ###Version 0.5.3
 - Fixed a bug causing incorrect coin/kill counts
