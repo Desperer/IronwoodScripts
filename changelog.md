@@ -1,5 +1,9 @@
 # Changelog
 
+### Version 0.6
+
+- Added all content to responsive flexbox
+
 ### Version 0.5.4
 
 - Corrected math on Level/Milestone ETAs

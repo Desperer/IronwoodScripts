@@ -46,9 +46,70 @@ Start UI components
 ------------------------
 */
 
+//Floating box style format
+let flexboxStyle =
+    ' background: #0D2234;' +
+    ' opacity: .7;' +
+    ' border: 2px solid #51606D;' +
+    ' padding: 4px;' +
+    ' border-radius: 5px;' +
+    ' position: fixed;' +
+    ' bottom: 42px;' +
+    ' right: 24px;' +
+    ' maxWidth: 1000px;' +
+    ' maxHeight: 1000px;' +
+    ' align-items: flex-start;' +
+    ' gap: 10px;' +
+    ' flex-wrap: wrap;' +
+//    ' align-content: flex-end;' +
+//    ' justify-content: space-between;' +
+//    'gap: 10px' +
+//    ' float: right;' +
+//    ' object-fit: none;' +
+//    ' flex-direction: row' +
+//    ' justify-content: flex-start' +
+//    ' flex-wrap: nowrap' +
+    ' display: inline-flex';
+
+    let flexboxRowStyle = 
+    ' background: #0D2234;' +
+    ' opacity: .7;' +
+    ' border: 2px solid #51606D;' +
+    ' padding: 4px;' +
+    ' border-radius: 5px;' +
+    ' position: fixed;' +
+    ' bottom: 42px;' +
+    ' right: 24px;' +
+    ' maxWidth: 1000px;' +
+    ' maxHeight: 1000px;' +
+    ' align-items: flex-start;' +
+    ' gap: 10px;' +
+    ' flex-wrap: wrap;' +
+//    ' align-content: flex-end;' +
+//    ' justify-content: space-between;' +
+//    'gap: 10px' +
+//    ' float: right;' +
+//    ' object-fit: none;' +
+//    ' flex-direction: row' +
+//    ' justify-content: flex-start' +
+//    ' flex-wrap: nowrap' +
+    ' display: inline-flex';
+
 
 //Floating box style format
 let boxStyle =
+    ' background: #0D2234;' +
+    ' border: 2px solid #51606D;' +
+   ' padding: 20px;' +
+    ' border-radius: 5px;' +
+//    ' flex: 1;' +
+//   ' max-height: 400px;' +
+//   ' max-width: 350px;' +
+    ' opacity: .7;' ;
+
+
+    //Button box format
+let settingsStyle =     
     ' background: #0D2234;' +
     ' border: 2px solid #51606D;' +
     ' padding: 4px;' +
@@ -75,6 +136,7 @@ let buttonStyle =
     'float: left;' +
     'line-height: 1.2;' +
     'user-select: none;' +
+    'gap: 10px' +
     'max-width: 200px;';
 
 //Button settings style format
@@ -93,29 +155,48 @@ let buttonSettingsStyle =
     'user-select: none;' +
     'max-width: 400px;';
 
+//Main Flexbox
+var mainFlexbox = document.createElement('div');
+mainFlexbox.style.cssText = flexboxStyle;
+document.body.appendChild(mainFlexbox);
+
+//Box for messages
+var messageBox = document.createElement('div');
+messageBox.style.cssText = boxStyle;
+//box.style.minWidth = '250px';
+messageBox.innerHTML = 'Click &#8634; to start tracking';
+messageBox.style.order = "10";
+messageBox.style.alignSelf = 'flex-end';
+//box.style.bottom = '43px';
+//box.style.right = '24px';
+mainFlexbox.appendChild(messageBox);
+
+
 //Box for stats
 var box = document.createElement('div');
-document.body.appendChild(box);
 box.style.cssText = boxStyle;
-box.style.minWidth = '250px';
-box.innerHTML = 'Click &#8634; to start tracking';
-box.style.bottom = '43px';
-box.style.right = '24px';
-document.body.appendChild(box);
-
-//Box for buttons
-var box2 = document.createElement('div');
-box2.style.cssText = boxStyle;
-box2.style.bottom = '4px';
-box2.style.right = '24px';
-document.body.appendChild(box2);
+//box.style.minWidth = '250px';
+box.innerHTML = 'STATS HERE';
+box.style.order = "5";
+//box.style.bottom = '43px';
+//box.style.right = '24px';
+mainFlexbox.appendChild(box);
 
 //Box for settings
 var boxSettings = document.createElement('div');
 boxSettings.style.cssText = boxStyle;
-boxSettings.style.minWidth = '30px';
-boxSettings.style.bottom = '43px';
-boxSettings.style.right = '354px';
+//boxSettings.style.minWidth = '30px';
+boxSettings.style.order = "1";
+//boxSettings.style.bottom = '43px';
+//boxSettings.style.right = '354px';
+
+//Box for buttons
+var box2 = document.createElement('div');
+box2.style.cssText = settingsStyle;
+box2.style.bottom = '4px';
+box2.style.right = '24px';
+document.body.appendChild(box2);
+
 
 //Button to minimize tracker
 var closeButton = document.createElement('div');
@@ -302,18 +383,19 @@ function resetTracker() { //Reset all stats in the tracker
 function hideTracker() { //minimize the tracker UI
     stopSound();
     if (boxToggleState == true) {
-        box.parentNode.removeChild(box);
+        document.body.removeChild(mainFlexbox);
         boxToggleState = false;
     }
     else {
-        document.body.appendChild(box);
+        document.body.appendChild(mainFlexbox);
         boxToggleState = true;
-        if (isRunning == true) {
+/*        if (isRunning == true) {
             box.innerHTML = loadingText;
         }
         else {
             box.innerHTML = startingText;
         }
+        */
 
     }
 }
@@ -321,7 +403,7 @@ function hideTracker() { //minimize the tracker UI
 function hideSettings() { //minimize the tracker UI
     stopSound();
     if (boxSettingsToggleState == false) {
-        document.body.appendChild(boxSettings);
+        mainFlexbox.appendChild(boxSettings);
 
         if (rareAlert == true) { rareAlertButton.style.color = 'lightgreen'; } else { rareAlertButton.style.color = 'red'; }
         if (idleAlert == true) { idleAlertButton.style.color = 'lightgreen'; } else { idleAlertButton.style.color = 'red'; }
@@ -335,7 +417,7 @@ function hideSettings() { //minimize the tracker UI
         boxSettingsToggleState = true;
     }
     else {
-        document.body.removeChild(boxSettings);
+        mainFlexbox.removeChild(boxSettings);
         boxSettingsToggleState = false;
     }
 }
