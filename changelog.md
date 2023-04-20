@@ -1,18 +1,26 @@
 # Changelog
-###Version 0.5.3
-- Corrected math on Level/Milestone ETAs
-- 
 
-###Version 0.5.3
+### Version 0.5.4
+
+- Corrected math on Level/Milestone ETAs
+- Implemented new timer/eta display
+- Cleaned up more parsing code
+---
+
+### Version 0.5.3
+
 - Fixed a bug causing incorrect coin/kill counts
 - Moved settings menu back to the left
 - Cleaned up the code a lot
 - Minor formatting changes
+---
 
-###Version 0.5.2
+### Version 0.5.2
+
 - Added potion tracking
 - Tracker will no longer load before any stats have appeared
 - Minor formatting changes
+---
 
 ### Version 0.5.1
 
