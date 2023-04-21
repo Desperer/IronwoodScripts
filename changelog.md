@@ -1,5 +1,11 @@
 # Changelog
 
+### Version 0.6
+
+- Rewrote UI as responsive flexbox
+- Added 'fun stuff' menu
+
+
 ### Version 0.5.4
 
 - Corrected math on Level/Milestone ETAs
