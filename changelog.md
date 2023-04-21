@@ -2,7 +2,9 @@
 
 ### Version 0.6
 
-- Added all content to responsive flexbox
+- Rewrote UI as responsive flexbox
+- Added 'fun stuff' menu
+
 
 ### Version 0.5.4
 

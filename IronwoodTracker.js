@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.5.4
+// @version      0.6.0
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -12,6 +12,7 @@
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
+// @grant        GM_setClipboard
 // @grant        GM.info
 // @license      MIT
 // ==/UserScript==
@@ -21,7 +22,7 @@
 CONFIGURATION - EDIT THESE TO YOUR LIKING!
 -----------------------------------------------------------------
 */
-var timeInterval = 3 * 1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to going lower
+var timeInterval = 2 * 1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to going lower
 var soundInterval = 10 * 1000 // Default timeInterval 10*1000 = 10 seconds, this is the time between sound alerts when idling/inactive
 
 //Feel free to replace the alert sound url
@@ -51,68 +52,42 @@ let flexboxStyle =
     ' background: #0D2234;' +
     ' opacity: .7;' +
     ' border: 2px solid #51606D;' +
-    ' padding: 4px;' +
     ' border-radius: 5px;' +
     ' position: fixed;' +
     ' bottom: 42px;' +
     ' right: 24px;' +
-    ' maxWidth: 1000px;' +
-    ' maxHeight: 1000px;' +
-    ' align-items: flex-start;' +
-    ' gap: 10px;' +
-    ' flex-wrap: wrap;' +
-//    ' align-content: flex-end;' +
-//    ' justify-content: space-between;' +
-//    'gap: 10px' +
-//    ' float: right;' +
-//    ' object-fit: none;' +
-//    ' flex-direction: row' +
-//    ' justify-content: flex-start' +
-//    ' flex-wrap: nowrap' +
+    ' min-height: 10px;' +
+    ' min-width: 100px;' +
+    ' max-width: 1000px;' +
+    ' max-height: 1000px;' +
+    ' justify-content: space-evenly;' +
     ' display: inline-flex';
 
-    let flexboxRowStyle = 
-    ' background: #0D2234;' +
-    ' opacity: .7;' +
-    ' border: 2px solid #51606D;' +
-    ' padding: 4px;' +
-    ' border-radius: 5px;' +
-    ' position: fixed;' +
-    ' bottom: 42px;' +
-    ' right: 24px;' +
-    ' maxWidth: 1000px;' +
-    ' maxHeight: 1000px;' +
-    ' align-items: flex-start;' +
-    ' gap: 10px;' +
-    ' flex-wrap: wrap;' +
-//    ' align-content: flex-end;' +
-//    ' justify-content: space-between;' +
-//    'gap: 10px' +
-//    ' float: right;' +
-//    ' object-fit: none;' +
-//    ' flex-direction: row' +
-//    ' justify-content: flex-start' +
-//    ' flex-wrap: nowrap' +
-    ' display: inline-flex';
-
+//Flexbox columns format
+let flexboxColumnStyle = 
+    ' padding: 0px 6px;' +
+    ' max-width: 500px;' +
+    ' max-height: 500px;' +
+    ' min-width: 230px;' +
+   ' flex-direction: column;' +
+   ' align-content: flex-start;' +
+   ' margin: 0px 4px;' +
+    ' display: flex';
 
 //Floating box style format
 let boxStyle =
     ' background: #0D2234;' +
-    ' border: 2px solid #51606D;' +
-   ' padding: 20px;' +
-    ' border-radius: 5px;' +
-//    ' flex: 1;' +
-//   ' max-height: 400px;' +
-//   ' max-width: 350px;' +
-    ' opacity: .7;' ;
+    ' flex: content;' +
+    ' min-width: 0px;' +
+    ' min-height: 0px;' +
+    ' vertical-align: middle;';
 
-
-    //Button box format
+//Button box format
 let settingsStyle =     
     ' background: #0D2234;' +
     ' border: 2px solid #51606D;' +
     ' padding: 4px;' +
+    ' opacity: .7;' +
     ' border-radius: 5px;' +
     ' position: fixed;' +
     ' opacity: .7;' +
@@ -136,7 +111,6 @@ let buttonStyle =
     'float: left;' +
     'line-height: 1.2;' +
     'user-select: none;' +
-    'gap: 10px' +
     'max-width: 200px;';
 
 //Button settings style format
@@ -160,35 +134,52 @@ var mainFlexbox = document.createElement('div');
 mainFlexbox.style.cssText = flexboxStyle;
 document.body.appendChild(mainFlexbox);
 
-//Box for messages
-var messageBox = document.createElement('div');
-messageBox.style.cssText = boxStyle;
-//box.style.minWidth = '250px';
-messageBox.innerHTML = 'Click &#8634; to start tracking';
-messageBox.style.order = "10";
-messageBox.style.alignSelf = 'flex-end';
-//box.style.bottom = '43px';
-//box.style.right = '24px';
-mainFlexbox.appendChild(messageBox);
-
+//Flexbox Columns
+var column1 = document.createElement('div');
+var column2 = document.createElement('div');
+var column3 = document.createElement('div');
+column1.style.cssText = flexboxColumnStyle;
+column2.style.cssText = flexboxColumnStyle;
+column1.style.order = '3';
+column2.style.order = '2';
+column3.style.order = '1';
+mainFlexbox.appendChild(column1);
 
 //Box for stats
 var box = document.createElement('div');
 box.style.cssText = boxStyle;
-//box.style.minWidth = '250px';
-box.innerHTML = 'STATS HERE';
-box.style.order = "5";
-//box.style.bottom = '43px';
-//box.style.right = '24px';
-mainFlexbox.appendChild(box);
+box.style.order = "2";
+column1.appendChild(box);
+
+//Box for messages
+var messageBox = document.createElement('div');
+messageBox.style.cssText = boxStyle;
+messageBox.style.order = '3';
+column1.appendChild(messageBox);
+
+//Box for stats title
+var titleBox = document.createElement('div');
+titleBox.style.cssText = boxStyle;
+titleBox.style.order = '1';
+column1.appendChild(titleBox);
+
+//Box for settings title
+var titleSettingsBox = document.createElement('div');
+titleSettingsBox.style.cssText = boxStyle;
+titleSettingsBox.style.order = '1';
+column2.appendChild(titleSettingsBox);
+
+//Box for fun stuff title
+var titleFunStuffBox = document.createElement('div');
+titleFunStuffBox.style.cssText = boxStyle;
+titleFunStuffBox.style.order = '1';
+column3.appendChild(titleFunStuffBox);
 
 //Box for settings
 var boxSettings = document.createElement('div');
 boxSettings.style.cssText = boxStyle;
-//boxSettings.style.minWidth = '30px';
-boxSettings.style.order = "1";
-//boxSettings.style.bottom = '43px';
-//boxSettings.style.right = '354px';
+boxSettings.style.order = '2';
+column2.appendChild(boxSettings);
 
 //Box for buttons
 var box2 = document.createElement('div');
@@ -197,10 +188,16 @@ box2.style.bottom = '4px';
 box2.style.right = '24px';
 document.body.appendChild(box2);
 
+//Box for fun stuff
+var boxFunStuff = document.createElement('div');
+boxSettings.style.cssText = boxStyle;
+boxSettings.style.order = '3';
+column3.appendChild(boxFunStuff);
 
 //Button to minimize tracker
 var closeButton = document.createElement('div');
 closeButton.innerHTML = '&#9776;';
+closeButton.title = 'Minimize tracker';
 closeButton.style.cssText = buttonStyle;
 box2.insertBefore(closeButton, box2.firstChild);
 closeButton.addEventListener("click", function () { hideTracker(); });
@@ -208,6 +205,7 @@ closeButton.addEventListener("click", function () { hideTracker(); });
 //Button to reset tracker stats
 var resetButton = document.createElement('div');
 resetButton.innerHTML = '&#8634;';
+resetButton.title = 'Restart tracker';
 resetButton.style.cssText = buttonStyle;
 box2.insertBefore(resetButton, closeButton);
 resetButton.addEventListener("click", function () { resetTracker(); });
@@ -215,9 +213,24 @@ resetButton.addEventListener("click", function () { resetTracker(); });
 //Button to open settings
 var settingsButton = document.createElement('div');
 settingsButton.innerHTML = '&#9881;';
+settingsButton.title = 'Open settings menu';
 settingsButton.style.cssText = buttonStyle;
 box2.insertBefore(settingsButton, resetButton);
 settingsButton.addEventListener("click", function () { hideSettings(); });
+
+//Button for fun stuff!
+var funStuffButton = document.createElement('div');
+funStuffButton.innerHTML = '&#9728;';
+funStuffButton.title = 'Fun stuff!';
+funStuffButton.style.cssText = buttonStyle;
+box2.insertBefore(funStuffButton, settingsButton);
+funStuffButton.addEventListener("click", function () { hideFunStuff(); });
+
+//Button for share snapshot
+var shareSnapshotButton = document.createElement('div');
+shareSnapshotButton.title = 'Copy a shareable snapshot of your account progress, formatted for discord';
+shareSnapshotButton.style.cssText = buttonSettingsStyle;
+boxFunStuff.appendChild(shareSnapshotButton);
 
 //Button to toggle rare drop sound alerts
 var rareAlertButton = document.createElement('div');
@@ -230,6 +243,7 @@ idleAlertButton.title = 'Toggle repeated sound notifications when your action st
 idleAlertButton.style.cssText = buttonSettingsStyle;
 
 
+
 /*
 ------------------------
 End UI components
@@ -239,6 +253,7 @@ End UI components
 //Variables you should not change yet
 var boxToggleState = true; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
 var boxSettingsToggleState = false; // Default false keeps the settings page hidden on pageload, true would show settings box on startup but is not yet properly implemented
+var boxFunStuffToggleState = false;
 var isRunning = false; // Tracker requires manual click to start as there is not yet functionality for checking if the page is fully loaded before starting
 
 //Local storage variables for settings
@@ -356,6 +371,8 @@ const trackedSkill = {
 };
 
 function resetTracker() { //Reset all stats in the tracker
+    box.innerHTML = ''; //Clear stat box content immediately
+    messageBox.innerHTML = '';
     stopSound();
     hasPlayed = false;
     let currentSkill = getCurrentSkill();
@@ -363,19 +380,19 @@ function resetTracker() { //Reset all stats in the tracker
         trackedSkill.reset();
         trackedSkill.name = getCurrentSkill();
         initializeCards();
-        box.innerHTML = loadingText;
+        messageBox.innerHTML = loadingText;
         isRunning = true;
         hasRun = true;
     }
     //If unallowed skill, show error message then return to inactive or loading state
     else {
-        box.innerHTML = unavailableText;
+        messageBox.innerHTML = unavailableText;
         if (isRunning == true) {
-            setTimeout(function () { box.innerHTML = loadingText; }, 2000);
+            setTimeout(function () { showMessage(loadingText); }, 2000);
         }
 
         else {
-            setTimeout(function () { box.innerHTML = startingText; }, 2000);
+            setTimeout(function () { showMessage(startingText); }, 2000);
         }
     }
 }
@@ -400,14 +417,24 @@ function hideTracker() { //minimize the tracker UI
     }
 }
 
+//'<div style="display:flex; min-width: 150px; justify-content: space-between; margin:0; padding: 4px 12px 0px; border-radius: 10px; border-radius: 10px border-color: gray; border-style: solid;">' +
+
+
 function hideSettings() { //minimize the tracker UI
     stopSound();
     if (boxSettingsToggleState == false) {
-        mainFlexbox.appendChild(boxSettings);
+        mainFlexbox.appendChild(column2);
 
         if (rareAlert == true) { rareAlertButton.style.color = 'lightgreen'; } else { rareAlertButton.style.color = 'red'; }
         if (idleAlert == true) { idleAlertButton.style.color = 'lightgreen'; } else { idleAlertButton.style.color = 'red'; }
-        boxSettings.innerHTML = '<h1 style=\"text-align:left;\"><b>Settings</b><span style=\"float:right;">v' + GM_info.script.version + '</span></h1> <hr style=\"border-color:inherit; margin: 0px -4px 8px\"></hr>';
+        //boxSettings.innerHTML = '<div style=\"text-align:left;\">Settings<span style=\"float:right;">v' + GM_info.script.version + '</span></div> <hr style=\"border-color:inherit; margin: 6px -4px 4px\"></hr>';
+
+        titleSettingsBox.innerHTML = '<div style="display:flex; min-width: 150px; align-items: baseline; border-bottom: 1px solid gray; padding: 0px 0px 5px">' +
+        '<div style="flex: 1; margin: 0px; padding: 0px;">&nbsp;Settings</div>' +
+            '<div style="flex: 1; text-align:right;"> v' + GM_info.script.version + '&nbsp; </div>' +
+            '</div>';
+    
+
         rareAlertButton.innerHTML = 'Rare drop sound';
         boxSettings.appendChild(rareAlertButton, boxSettings.firstChild);
         idleAlertButton.innerHTML = 'Idle sound';
@@ -417,8 +444,28 @@ function hideSettings() { //minimize the tracker UI
         boxSettingsToggleState = true;
     }
     else {
-        mainFlexbox.removeChild(boxSettings);
+        mainFlexbox.removeChild(column2);
         boxSettingsToggleState = false;
+    }
+}
+
+function hideFunStuff() { //minimize the tracker UI
+    stopSound();
+    if (boxFunStuffToggleState == false) {
+        mainFlexbox.appendChild(column3);
+
+        titleFunStuffBox.innerHTML = '<div style="display:flex; min-width: 150px; align-items: baseline; border-bottom: 1px solid gray; padding: 0px 0px 5px">' +
+        '<div style="flex: 1; margin: 0px; padding: 0px;">&nbsp;Fun Stuff</div>' +
+            '<div style="flex: 1; text-align:right;">' + '' + '&nbsp; </div>' +
+            '</div>';
+    
+        shareSnapshotButton.innerHTML = 'Share snapshot';
+        shareSnapshotButton.addEventListener("click", function () { shareSnapshot(); });
+        boxFunStuffToggleState = true;
+    }
+    else {
+        mainFlexbox.removeChild(column3);
+        boxFunStuffToggleState = false;
     }
 }
 
@@ -463,6 +510,26 @@ function idlePlaySound() {
     if (document.getElementsByClassName("ring").length == 0) {
         idleSound.play();
     }
+}
+
+function shareSnapshot() {
+    let skillsList = document.getElementsByClassName('scroll custom-scrollbar scroll-margin')[0].childNodes;
+    let skillTemp = '';
+    let skillOutput = '';
+console.log(skillsList.length);
+console.log(skillsList[9].innerText);
+    for (let i = 0; i < (skillsList.length-13); i++) {
+        console.log(skillsList[i].innerText);
+        if (skillsList[i].innerText.includes('Lv.')) {
+        skillOutput += '> ' + skillsList[i].innerText.replace(/[\n\r]+/g, ' ') + '\n';
+        }
+    }
+console.log(skillOutput);
+GM_setClipboard(skillOutput, "text");
+}
+
+function showMessage(text){
+    messageBox.innerHTML = '<div style="align-self: flex-end; text-align: center; justify-self: center; margin-top: auto;">' + text + '</div>';
 }
 
 function checkAllowedSkill(skill) { //return true if the skill is a valid skill (not blacklisted menu options)
@@ -618,10 +685,14 @@ function trackerLoop() {
         if (trackedSkill.name == currentSkill) {
             parseTrackerComponent();
             parseCards();
-            box.innerHTML = displayBox("active");
+            titleBox.innerHTML = displayBox("active")[0];
+            box.innerHTML = displayBox("active")[1];
+            showMessage('');
         }
         else {
-            box.innerHTML = displayBox("inactive");
+            titleBox.innerHTML = displayBox("inactive")[0];
+            box.innerHTML = '';
+            messageBox.innerHTML = '';
         }
 
     }
@@ -731,15 +802,18 @@ function displayBox(status) {
     //console.log(Date.now(), (Date.now() + estimatedLevelTime));
 
     let boxContents = '';
-    let boxTitle = '<div style="display:flex">' +
-        '<div><img style="display: flex; justify-content: left; align-items: center; height:24px; width:24px; border-radius: 4px; border-color: white; " src="assets/misc/' + getIcon(trackedSkill.name) + '"></div>' +
-        '<div style="display: flex; justify-content: center; align-items: center; height: 24px; margin-left: auto;"><b>' + trackedSkill.name + '</b></div>' +
-        '<div style="margin-left: auto;"> <b>' + determineTimer((Date.now() - trackedSkill.startTime)) + '</b> </div>' +
+    let boxTitle = '<div style="display:flex; min-width: 220px; align-items: baseline; border-bottom: 1px solid gray; padding: 0px 0px 4px">' +
+        '<div style="flex: 1; margin: 0px; padding: 0px;">&nbsp;<img style="vertical-align: middle; width: 24px; height: 24px; image-rendering: pixelated" src="assets/misc/' + getIcon(trackedSkill.name) + '">&nbsp;</div>' +
+        '<div style="flex: 2; margin: 0px; padding: 0px;">&nbsp;<b>' + trackedSkill.name + '</b></div>' +
+        '<div style="flex: 1; text-align:right;">' + determineTimer((Date.now() - trackedSkill.startTime)) + '&nbsp; </div>' +
         '</div>';
 
-    let boxDivider = '<hr style=\"border-color:inherit; margin: 4px -4px 4px\"></hr>';
-    let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;">XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + xpPerHour.toLocaleString('en') + '/h)</span></p>';
-    let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue; text-align:center"> Level up ' + dayjs((Date.now() - estimatedLevelTime)).toNow() + '</p>';
+
+
+
+    let boxDivider = '<hr style="border-color:gray;"></hr>';
+    let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;"><span style="text-align:left;";>XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + xpPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue; text-align:center; border-top: 1px solid gray"> Level up ' + dayjs((Date.now() - estimatedLevelTime)).toNow() + '</p>';
     let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue; text-align:center"> Tier up ' + dayjs((Date.now() - estimatedMilestoneTime)).toNow() + '</p>';
     let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + coinsPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> &#013;(' + killsPerHour.toLocaleString('en') + '/h)</span></p>';
@@ -777,26 +851,25 @@ function displayBox(status) {
             boxContents += boxArrows;
         }
         if (earnedXp > 0) {
-            boxContents += boxDivider + boxNextLevel;
+            //           boxContents += boxNextLevel;
+            boxContents += boxNextLevel;
             //console.log(milestoneLevel[0]);
             //console.log(trackedSkill.currentLevel);
             if ((milestoneLevel[0] - 1) != trackedSkill.currentLevel) { //Don't display milestone progress if next tier is only 1 level away
                 boxContents += boxNextMilestone;
             }
         }
-    }
-    else if (status == "inactive" && isRunning == true) {
-        boxContents += redirectText;
+        return [boxTitle, boxContents];
     }
 
-    if (boxContents == '') { //If no stats yet, continue to show loading
-        return loadingText;
-    }
-
-    return boxTitle + boxDivider + boxContents;
+    return [boxTitle, ''] //return only title if inactive
 }
+    
+
+    //return boxTitle + boxDivider + boxContents;
 
 dayjs.extend(window.dayjs_plugin_relativeTime);
 dayjs.extend(window.dayjs_plugin_duration);
 
+showMessage(startingText);
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
