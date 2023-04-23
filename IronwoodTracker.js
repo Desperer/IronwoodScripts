@@ -214,7 +214,6 @@ titleStatsBox.appendChild(statsHeaderCenter);
 titleStatsBox.appendChild(statsHeaderRight);
 
 //Title (header) for history box
-var titleHistoryBoxFirst = document.createElement('div');
 var titleHistoryBox = document.createElement('div');
 var historyHeaderLeft = document.createElement('div');
 var historyHeaderCenter = document.createElement('div');
@@ -222,10 +221,8 @@ var historyHeaderRight = document.createElement('div');
 historyHeaderLeft.className = 'flexItemLeft trackerIcon';
 historyHeaderRight.className = 'flexItemRight';
 historyHeaderCenter.className = 'flexItemCenter';
-titleHistoryBoxFirst.className = 'trackerHeader';
 titleHistoryBox.className = 'trackerHeader';
-titleHistoryBoxFirst.innerHTML = 'History';
-//column[3].appendChild(titleHistoryBoxFirst);
+historyHeaderLeft.innerHTML = 'History';
 column[3].appendChild(titleHistoryBox);
 titleHistoryBox.appendChild(historyHeaderLeft);
 titleHistoryBox.appendChild(historyHeaderCenter);
@@ -670,7 +667,6 @@ function calcMilestone(givenLevel) { //Based on given level, return the next mil
 }
 
 function saveTrackerHistory() {
-    historyHeaderLeft.innerHTML = 'History';
     historyHeaderCenter.innerHTML = statsHeaderCenter.innerHTML;
     historyHeaderRight.innerHTML = statsHeaderRight.innerHTML;
     trackerHistoryBox.innerHTML = trackerStatBox.innerHTML;
