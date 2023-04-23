@@ -1,254 +1,43 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.0
+// @version      0.6.1
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
+// @match        https://limitlesstcg.com/decks/list/7212
 // @icon         https://github.com/Desperer/IronwoodScripts/blob/main/icon/IronwoodSword.png?raw=true
 // @require      https://unpkg.com/dayjs/dayjs.min.js
 // @require      https://unpkg.com/dayjs/plugin/relativeTime.js
 // @require      https://unpkg.com/dayjs/plugin/duration.js
+// @resource     /style.css
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
+// @grant        GM_getResourceText
 // @grant        GM_setClipboard
 // @grant        GM.info
 // @license      MIT
 // ==/UserScript==
 
-/*
------------------------------------------------------------------
-CONFIGURATION - EDIT THESE TO YOUR LIKING!
------------------------------------------------------------------
-*/
-var timeInterval = 2 * 1000; // Default timeInterval 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to going lower
-var soundInterval = 10 * 1000 // Default timeInterval 10*1000 = 10 seconds, this is the time between sound alerts when idling/inactive
+/*---------------------------------------------------------------------------
+        CONFIGURATION - EDIT THESE TO YOUR LIKING!
+---------------------------------------------------------------------------*/
+//Polling intervals
+var timeInterval = 2 * 1000; // Default 2*1000 = 2 seconds, this is the time between stat box refreshes. Probably no real downside to going lower but it doesn't look as nice
+var soundInterval = 10 * 1000 // Default 10*1000 = 10 seconds, this is the time between sound alerts when idling/inactive
 
-//Feel free to replace the alert sound url
+//Alert sound URLs
 let rareDropSound = new Audio("https://cdn.freesound.org/previews/571/571487_7114905-lq.mp3");
 let idleSound = new Audio("https://cdn.freesound.org/previews/504/504773_9961300-lq.mp3");
 
-//alert base volume. Use a decimal like .8 for quieter alert sound
-rareDropSound.volume = 1.0;
-idleSound.volume = 1.0;
+//Alert volumes
+rareDropSound.volume = 1; //Default 1, Use a decimal like .8 for quieter alert sound
+idleSound.volume = 1; //Default 1, Use a decimal like .8 for quieter alert sound
 
-/*
------------------------------------------------------------------
-DO NOT EDIT BELOW! DO NOT EDIT BELOW! DO NOT EDIT BELOW!
------------------------------------------------------------------
-*/
-
-
-
-/*
-------------------------
-Start UI components
-------------------------
-*/
-
-//Floating box style format
-let flexboxStyle =
-    ' background: #0D2234;' +
-    ' opacity: .7;' +
-    ' border: 2px solid #51606D;' +
-    ' border-radius: 5px;' +
-    ' position: fixed;' +
-    ' bottom: 42px;' +
-    ' right: 24px;' +
-    ' min-height: 10px;' +
-    ' min-width: 100px;' +
-    ' max-width: 1000px;' +
-    ' max-height: 1000px;' +
-    ' justify-content: space-evenly;' +
-    ' display: inline-flex';
-
-//Flexbox columns format
-let flexboxColumnStyle = 
-    ' padding: 0px 6px;' +
-    ' max-width: 500px;' +
-    ' max-height: 500px;' +
-    ' min-width: 230px;' +
-   ' flex-direction: column;' +
-   ' align-content: flex-start;' +
-   ' margin: 0px 4px;' +
-    ' display: flex';
-
-//Floating box style format
-let boxStyle =
-    ' background: #0D2234;' +
-    ' flex: content;' +
-    ' min-width: 0px;' +
-    ' min-height: 0px;' +
-    ' vertical-align: middle;';
-
-//Button box format
-let settingsStyle =     
-    ' background: #0D2234;' +
-    ' border: 2px solid #51606D;' +
-    ' padding: 4px;' +
-    ' opacity: .7;' +
-    ' border-radius: 5px;' +
-    ' position: fixed;' +
-    ' opacity: .7;' +
-    ' float: right;' +
-    ' object-fit: none;' +
-    ' max-height: 400px;' +
-    ' max-width: 350px;';
-
-//Button style format
-let buttonStyle =
-    ' background: #061A2E;' +
-    ' padding: 2px;' +
-    ' padding-left: 6px;' +
-    ' padding-right: 6px;' +
-    ' font-size: 16px;' +
-    ' display: inline-block;' +
-    ' text-align: center;' +
-    'max-height: 32px;' +
-    'box-sizing: content-box;' +
-    'margin: 0px;' +
-    'float: left;' +
-    'line-height: 1.2;' +
-    'user-select: none;' +
-    'max-width: 200px;';
-
-//Button settings style format
-let buttonSettingsStyle =
-    ' background: #061A2E;' +
-    ' padding: 8px;' +
-    ' font-size: 16px;' +
-    ' display: block;' +
-    ' text-align: center;' +
-    'max-height: 32px;' +
-    'border: 2px solid #637A70;' +
-    'border-radius: 5px;' +
-    'box-sizing: content-box;' +
-    'margin: 4px;' +
-    'line-height: 1.2;' +
-    'user-select: none;' +
-    'max-width: 400px;';
-
-//Main Flexbox
-var mainFlexbox = document.createElement('div');
-mainFlexbox.style.cssText = flexboxStyle;
-document.body.appendChild(mainFlexbox);
-
-//Flexbox Columns
-var column1 = document.createElement('div');
-var column2 = document.createElement('div');
-var column3 = document.createElement('div');
-column1.style.cssText = flexboxColumnStyle;
-column2.style.cssText = flexboxColumnStyle;
-column1.style.order = '3';
-column2.style.order = '2';
-column3.style.order = '1';
-mainFlexbox.appendChild(column1);
-
-//Box for stats
-var box = document.createElement('div');
-box.style.cssText = boxStyle;
-box.style.order = "2";
-column1.appendChild(box);
-
-//Box for messages
-var messageBox = document.createElement('div');
-messageBox.style.cssText = boxStyle;
-messageBox.style.order = '3';
-column1.appendChild(messageBox);
-
-//Box for stats title
-var titleBox = document.createElement('div');
-titleBox.style.cssText = boxStyle;
-titleBox.style.order = '1';
-column1.appendChild(titleBox);
-
-//Box for settings title
-var titleSettingsBox = document.createElement('div');
-titleSettingsBox.style.cssText = boxStyle;
-titleSettingsBox.style.order = '1';
-column2.appendChild(titleSettingsBox);
-
-//Box for fun stuff title
-var titleFunStuffBox = document.createElement('div');
-titleFunStuffBox.style.cssText = boxStyle;
-titleFunStuffBox.style.order = '1';
-column3.appendChild(titleFunStuffBox);
-
-//Box for settings
-var boxSettings = document.createElement('div');
-boxSettings.style.cssText = boxStyle;
-boxSettings.style.order = '2';
-column2.appendChild(boxSettings);
-
-//Box for buttons
-var box2 = document.createElement('div');
-box2.style.cssText = settingsStyle;
-box2.style.bottom = '4px';
-box2.style.right = '24px';
-document.body.appendChild(box2);
-
-//Box for fun stuff
-var boxFunStuff = document.createElement('div');
-boxSettings.style.cssText = boxStyle;
-boxSettings.style.order = '3';
-column3.appendChild(boxFunStuff);
-
-//Button to minimize tracker
-var closeButton = document.createElement('div');
-closeButton.innerHTML = '&#9776;';
-closeButton.title = 'Minimize tracker';
-closeButton.style.cssText = buttonStyle;
-box2.insertBefore(closeButton, box2.firstChild);
-closeButton.addEventListener("click", function () { hideTracker(); });
-
-//Button to reset tracker stats
-var resetButton = document.createElement('div');
-resetButton.innerHTML = '&#8634;';
-resetButton.title = 'Restart tracker';
-resetButton.style.cssText = buttonStyle;
-box2.insertBefore(resetButton, closeButton);
-resetButton.addEventListener("click", function () { resetTracker(); });
-
-//Button to open settings
-var settingsButton = document.createElement('div');
-settingsButton.innerHTML = '&#9881;';
-settingsButton.title = 'Open settings menu';
-settingsButton.style.cssText = buttonStyle;
-box2.insertBefore(settingsButton, resetButton);
-settingsButton.addEventListener("click", function () { hideSettings(); });
-
-//Button for fun stuff!
-var funStuffButton = document.createElement('div');
-funStuffButton.innerHTML = '&#9728;';
-funStuffButton.title = 'Fun stuff!';
-funStuffButton.style.cssText = buttonStyle;
-box2.insertBefore(funStuffButton, settingsButton);
-funStuffButton.addEventListener("click", function () { hideFunStuff(); });
-
-//Button for share snapshot
-var shareSnapshotButton = document.createElement('div');
-shareSnapshotButton.title = 'Copy a shareable snapshot of your account progress, formatted for discord';
-shareSnapshotButton.style.cssText = buttonSettingsStyle;
-boxFunStuff.appendChild(shareSnapshotButton);
-
-//Button to toggle rare drop sound alerts
-var rareAlertButton = document.createElement('div');
-rareAlertButton.title = 'Toggle repeated sound notifications when a rare item is found';
-rareAlertButton.style.cssText = buttonSettingsStyle;
-
-//Button to toggle idle sound alerts
-var idleAlertButton = document.createElement('div');
-idleAlertButton.title = 'Toggle repeated sound notifications when your action stops';
-idleAlertButton.style.cssText = buttonSettingsStyle;
-
-
-
-/*
-------------------------
-End UI components
-------------------------
-*/
+/*---------------------------------------------------------------------------
+        DO NOT EDIT BELOW! DO NOT EDIT BELOW! DO NOT EDIT BELOW!
+---------------------------------------------------------------------------*/
 
 //Variables you should not change yet
 var boxToggleState = true; // Default true makes the stat box display on pageload, false would keep it hidden on startup but is not yet implemented properly
@@ -260,9 +49,12 @@ var isRunning = false; // Tracker requires manual click to start as there is not
 var rareAlert;
 var idleAlert;
 
+//Get settings values from local storage
 (async () => {
     rareAlert = await GM.getValue('rareAlert', false);
     idleAlert = await GM.getValue('idleAlert', false);
+    if (rareAlert == true) { rareAlertButton.className = 'trackerButton trackerButtonOn'; } else { rareAlertButton.className = 'trackerButton trackerButtonOff'; }
+    if (idleAlert == true) { idleAlertButton.className = 'trackerButton trackerButtonOn'; } else { idleAlertButton.className = 'trackerButton trackerButtonOff'; }
 })();
 
 //Messages to display
@@ -278,19 +70,19 @@ const combatPages = ['One-handed', 'Two-handed', 'Ranged', 'Defense'];
 const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market', 'Quests', 'Leaderboards', 'Changelog',
     'Settings', 'Discord', 'Reddit', 'Patreon', 'Rules', 'Terms of Use', 'Privacy Policy', 'Guild'];
 
-const boneList = ['Bone', 'Fang', 'Medium Bone', 'Medium Fang', 'Large Bone', 'Large Fang', 'Giant Bone'];
+const boneList = ['Bone', 'Medium Bone', 'Large Bone', 'Giant Bone',
+    'Fang', 'Medium Fang', 'Large Fang'];
 
-const combatPotionList = ['Combat Potion', 'Double Attack Potion', 'Resistance Potion', 'Super Combat Potion',
-    'Super Double Attack Potion', 'Super Resistance Potion', 'Divine Combat Potion',
-    'Divine Double Attack Potion', 'Divine Resistance Potion'];
+const combatPotionList = ['Combat Potion', 'Super Combat Potion', 'Divine Combat Potion',
+    'Double Attack Potion', 'Super Double Attack Potion', 'Divine Double Attack Potion',
+    'Resistance Potion', 'Super Resistance Potion', 'Divine Resistance Potion'];
 
-const gatheringPotionList = ['Gather Level Potion', 'Gather Speed Potion', 'Super Gather Level Potion',
-    'Super Gather Speed Potion', 'Divine Gather Level Potion',
-    'Divine Gather Speed Potion'];
+const gatheringPotionList = ['Gather Level Potion', 'Super Gather Level Potion', 'Divine Gather Level Potion',
+    'Gather Speed Potion', 'Super Gather Speed Potion', 'Divine Gather Speed Potion',];
 
-const craftingPotionList = ['Craft Level Potion', 'Craft Speed Potion', 'Super Craft Level Potion',
-    'Super Craft Speed Potion', 'Divine Craft Level Potion',
-    'Divine Craft Speed Potion'];
+const craftingPotionList = ['Craft Level Potion', 'Super Craft Level Potion', 'Divine Craft Level Potion',
+    'Craft Speed Potion', 'Super Craft Speed Potion', 'Divine Craft Speed Potion',
+    'Preservation Potion', 'Super Preservation Potion', 'Divine Super Preservation Potion'];
 
 const milestones = new Map([ //Level : Total XP Required
     [10, 3794],
@@ -305,8 +97,7 @@ const milestones = new Map([ //Level : Total XP Required
 const cardList = document.getElementsByClassName('card');
 const trackerComponent = document.getElementsByTagName("tracker-component");
 
-//instantiate variables for tracker
-//let startedTrackerBeforeSkill = false;
+//Variables used by tracker
 var hasRun = false;
 var hasPlayed = false;
 var notifStatus = false;
@@ -370,8 +161,169 @@ const trackedSkill = {
     }
 };
 
+//Main Flexbox
+var trackerWindow = document.createElement('div');
+trackerWindow.className = 'trackerWindow';
+document.body.appendChild(trackerWindow);
+
+//Dynamically create number of flexbox columns
+var column = [];
+for (let i = 1; i <= 3; i++) {
+    column[i] = document.createElement('div');
+    column[i].className = 'trackerColumn trackerColumn' + i;
+}
+
+//Show first column by default
+trackerWindow.appendChild(column[1]);
+
+//Box for tracked stats
+var trackerStatBox = document.createElement('div');
+trackerStatBox.className = 'trackerStatBox';
+column[1].appendChild(trackerStatBox);
+
+//Box for messages
+var messageBox = document.createElement('div');
+messageBox.className = 'messageBox';
+column[1].appendChild(messageBox);
+
+//Title (header) for settings box
+var titleSettingsBox = document.createElement('div');
+var settingsHeaderLeft = document.createElement('div');
+var settingsHeaderRight = document.createElement('div');
+titleSettingsBox.className = 'trackerHeader';
+settingsHeaderLeft.className = 'flexItemLeft';
+settingsHeaderRight.className = 'flexItemRight';
+settingsHeaderLeft.innerHTML = 'Settings'
+settingsHeaderRight.innerHTML = 'v' + GM_info.script.version;
+column[2].appendChild(titleSettingsBox);
+titleSettingsBox.appendChild(settingsHeaderLeft);
+titleSettingsBox.appendChild(settingsHeaderRight);
+
+//Title (header) for stat box
+var titleStatsBox = document.createElement('div');
+var statsHeaderLeft = document.createElement('div');
+var statsHeaderCenter = document.createElement('div');
+var statsHeaderRight = document.createElement('div');
+titleStatsBox.className = 'trackerHeader';
+statsHeaderLeft.className = 'flexItemLeft trackerIcon';
+statsHeaderRight.className = 'flexItemRight';
+statsHeaderCenter.className = 'flexItemCenter';
+column[1].appendChild(titleStatsBox);
+titleStatsBox.appendChild(statsHeaderLeft);
+titleStatsBox.appendChild(statsHeaderCenter);
+titleStatsBox.appendChild(statsHeaderRight);
+
+//Title (header) for history box
+var titleHistoryBoxFirst = document.createElement('div');
+var titleHistoryBox = document.createElement('div');
+var historyHeaderLeft = document.createElement('div');
+var historyHeaderCenter = document.createElement('div');
+var historyHeaderRight = document.createElement('div');
+historyHeaderLeft.className = 'flexItemLeft trackerIcon';
+historyHeaderRight.className = 'flexItemRight';
+historyHeaderCenter.className = 'flexItemCenter';
+titleHistoryBoxFirst.className = 'trackerHeader';
+titleHistoryBox.className = 'trackerHeader';
+titleHistoryBoxFirst.innerHTML = 'History';
+//column[3].appendChild(titleHistoryBoxFirst);
+column[3].appendChild(titleHistoryBox);
+titleHistoryBox.appendChild(historyHeaderLeft);
+titleHistoryBox.appendChild(historyHeaderCenter);
+titleHistoryBox.appendChild(historyHeaderRight);
+
+//Box for history
+var trackerHistoryBox = document.createElement('div');
+trackerHistoryBox.className = 'trackerStatBox';
+trackerHistoryBox.innterHTML = 'History';
+column[3].appendChild(trackerHistoryBox);
+
+//Button to toggle rare drop sound alerts
+var rareAlertButton = document.createElement('div');
+if (rareAlert == true) { rareAlertButton.className = 'trackerButton trackerButtonOn'; } else { rareAlertButton.className = 'trackerButton trackerButtonOff'; }
+rareAlertButton.title = 'Toggle repeated sound notifications when a rare item is found';
+rareAlertButton.innerHTML = 'Rare drop sound';
+rareAlertButton.addEventListener("click", function () { toggleRareAlert(); });
+column[2].append(rareAlertButton);
+
+//Button to toggle idle sound alerts
+var idleAlertButton = document.createElement('div');
+if (idleAlert == true) { idleAlertButton.className = 'trackerButton trackerButtonOn'; } else { idleAlertButton.className = 'trackerButton trackerButtonOff'; }
+idleAlertButton.title = 'Toggle repeated sound notifications when your action stops';
+idleAlertButton.innerHTML = 'Idle sound';
+idleAlertButton.addEventListener("click", function () { toggleIdleAlert(); });
+column[2].append(idleAlertButton);
+
+
+//Title (header) for fun stuff
+var titleFunStuffBox = document.createElement('div');
+var funStuffHeaderLeft = document.createElement('div');
+titleFunStuffBox.className = 'trackerHeader';
+funStuffHeaderLeft.className = 'flexItemLeft';
+funStuffHeaderLeft.innerHTML = 'Fun Stuff';
+column[2].appendChild(titleFunStuffBox);
+titleFunStuffBox.appendChild(funStuffHeaderLeft);
+
+//Box for buttons
+var box2 = document.createElement('div');
+box2.className = "trackerNavBar";
+document.body.appendChild(box2);
+
+//Box for fun stuff
+var boxFunStuff = document.createElement('div');
+boxFunStuff.className = 'boxStyle boxSettings';
+column[2].appendChild(boxFunStuff);
+
+//Button to minimize tracker
+var closeButton = document.createElement('div');
+closeButton.className = 'trackerNavButton';
+closeButton.title = 'Minimize tracker';
+closeButton.innerHTML = '&#9776;';
+box2.insertBefore(closeButton, box2.firstChild);
+closeButton.addEventListener("click", function () { showTracker(); });
+
+//Button to reset tracker stats
+var resetButton = document.createElement('div');
+resetButton.className = 'trackerNavButton';
+resetButton.title = 'Restart tracker';
+resetButton.innerHTML = '&#8634;';
+box2.insertBefore(resetButton, closeButton);
+resetButton.addEventListener("click", function () { resetTracker(); });
+
+//Button to open settings
+var settingsButton = document.createElement('div');
+settingsButton.className = 'trackerNavButton';
+settingsButton.title = 'Open settings menu';
+settingsButton.innerHTML = '&#9881;';
+box2.insertBefore(settingsButton, resetButton);
+settingsButton.addEventListener("click", function () { showSettings(); });
+
+//Button for fun stuff!
+var funStuffButton = document.createElement('div');
+funStuffButton.className = 'trackerNavButton';
+funStuffButton.title = 'History';
+funStuffButton.innerHTML = '&#9728;';
+
+box2.insertBefore(funStuffButton, settingsButton);
+funStuffButton.addEventListener("click", function () { showFunStuff(); });
+
+//Button for share snapshot
+var shareSnapshotButton = document.createElement('div');
+shareSnapshotButton.className = 'trackerButton';
+shareSnapshotButton.title = 'Copy a shareable snapshot of your account progress, formatted for discord'
+shareSnapshotButton.innerHTML = 'Share Stats'
+shareSnapshotButton.addEventListener("click", function () { shareSnapshot(); });
+column[2].appendChild(shareSnapshotButton);
+
+//Button for history
+var saveHistoryButton = document.createElement('div');
+saveHistoryButton.className = 'trackerButton';
+saveHistoryButton.title = 'Save current stat window in history panel, for comparison purposes'
+saveHistoryButton.innerHTML = 'Save History'
+saveHistoryButton.addEventListener("click", function () { saveTrackerHistory(); });
+column[2].appendChild(saveHistoryButton);
+
 function resetTracker() { //Reset all stats in the tracker
-    box.innerHTML = ''; //Clear stat box content immediately
+    trackerStatBox.innerHTML = ''; //Clear stat box content immediately
     messageBox.innerHTML = '';
     stopSound();
     hasPlayed = false;
@@ -397,89 +349,53 @@ function resetTracker() { //Reset all stats in the tracker
     }
 }
 
-function hideTracker() { //minimize the tracker UI
+function showTracker() { //minimize the tracker UI
     stopSound();
     if (boxToggleState == true) {
-        document.body.removeChild(mainFlexbox);
+        document.body.removeChild(trackerWindow);
         boxToggleState = false;
     }
     else {
-        document.body.appendChild(mainFlexbox);
+        document.body.appendChild(trackerWindow);
         boxToggleState = true;
-/*        if (isRunning == true) {
-            box.innerHTML = loadingText;
-        }
-        else {
-            box.innerHTML = startingText;
-        }
-        */
-
     }
 }
 
-//'<div style="display:flex; min-width: 150px; justify-content: space-between; margin:0; padding: 4px 12px 0px; border-radius: 10px; border-radius: 10px border-color: gray; border-style: solid;">' +
 
-
-function hideSettings() { //minimize the tracker UI
+function showSettings() { //toggle showing column2
     stopSound();
     if (boxSettingsToggleState == false) {
-        mainFlexbox.appendChild(column2);
-
-        if (rareAlert == true) { rareAlertButton.style.color = 'lightgreen'; } else { rareAlertButton.style.color = 'red'; }
-        if (idleAlert == true) { idleAlertButton.style.color = 'lightgreen'; } else { idleAlertButton.style.color = 'red'; }
-        //boxSettings.innerHTML = '<div style=\"text-align:left;\">Settings<span style=\"float:right;">v' + GM_info.script.version + '</span></div> <hr style=\"border-color:inherit; margin: 6px -4px 4px\"></hr>';
-
-        titleSettingsBox.innerHTML = '<div style="display:flex; min-width: 150px; align-items: baseline; border-bottom: 1px solid gray; padding: 0px 0px 5px">' +
-        '<div style="flex: 1; margin: 0px; padding: 0px;">&nbsp;Settings</div>' +
-            '<div style="flex: 1; text-align:right;"> v' + GM_info.script.version + '&nbsp; </div>' +
-            '</div>';
-    
-
-        rareAlertButton.innerHTML = 'Rare drop sound';
-        boxSettings.appendChild(rareAlertButton, boxSettings.firstChild);
-        idleAlertButton.innerHTML = 'Idle sound';
-        boxSettings.insertBefore(idleAlertButton, boxSettings.lastChild);
-        rareAlertButton.addEventListener("click", function () { toggleRareAlert(); });
-        idleAlertButton.addEventListener("click", function () { toggleIdleAlert(); });
+        trackerWindow.appendChild(column[2]);
         boxSettingsToggleState = true;
     }
     else {
-        mainFlexbox.removeChild(column2);
+        trackerWindow.removeChild(column[2]);
         boxSettingsToggleState = false;
     }
 }
 
-function hideFunStuff() { //minimize the tracker UI
+function showFunStuff() { //toggle showing column3
     stopSound();
     if (boxFunStuffToggleState == false) {
-        mainFlexbox.appendChild(column3);
-
-        titleFunStuffBox.innerHTML = '<div style="display:flex; min-width: 150px; align-items: baseline; border-bottom: 1px solid gray; padding: 0px 0px 5px">' +
-        '<div style="flex: 1; margin: 0px; padding: 0px;">&nbsp;Fun Stuff</div>' +
-            '<div style="flex: 1; text-align:right;">' + '' + '&nbsp; </div>' +
-            '</div>';
-    
-        shareSnapshotButton.innerHTML = 'Share snapshot';
-        shareSnapshotButton.addEventListener("click", function () { shareSnapshot(); });
+        trackerWindow.appendChild(column[3]);
         boxFunStuffToggleState = true;
     }
     else {
-        mainFlexbox.removeChild(column3);
+        trackerWindow.removeChild(column[3]);
         boxFunStuffToggleState = false;
     }
 }
 
 function toggleRareAlert() { //toggle sound alert for rare drop
-    console.log('rare');
     if (rareAlert == true) {
         //        console.log('become red!');
-        rareAlertButton.style.color = 'red';
+        rareAlertButton.className = 'trackerButton trackerButtonOff';
         rareAlert = false;
         (async () => { await (GM.setValue('rareAlert', false)); })();
     }
     else {
         //        console.log('become green!');
-        rareAlertButton.style.color = 'lightgreen';
+        rareAlertButton.className = 'trackerButton trackerButtonOn';
         rareAlert = true;
         (async () => { await (GM.setValue('rareAlert', true)); })();
     }
@@ -487,12 +403,12 @@ function toggleRareAlert() { //toggle sound alert for rare drop
 
 function toggleIdleAlert() { //toggle sound alert for rare drop
     if (idleAlert == true) {
-        idleAlertButton.style.color = 'red';
+        idleAlertButton.className = 'trackerButton trackerButtonOff';
         idleAlert = false;
         (async () => { await (GM.setValue('idleAlert', false)); })();
     }
     else {
-        idleAlertButton.style.color = 'lightgreen';
+        idleAlertButton.className = 'trackerButton trackerButtonOn';
         idleAlert = true;
         (async () => { await (GM.setValue('idleAlert', true)); })();
     }
@@ -516,20 +432,21 @@ function shareSnapshot() {
     let skillsList = document.getElementsByClassName('scroll custom-scrollbar scroll-margin')[0].childNodes;
     let skillTemp = '';
     let skillOutput = '';
-console.log(skillsList.length);
-console.log(skillsList[9].innerText);
-    for (let i = 0; i < (skillsList.length-13); i++) {
+    console.log(skillsList.length);
+    console.log(skillsList[9].innerText);
+    for (let i = 0; i < (skillsList.length - 13); i++) {
         console.log(skillsList[i].innerText);
         if (skillsList[i].innerText.includes('Lv.')) {
-        skillOutput += '> ' + skillsList[i].innerText.replace(/[\n\r]+/g, ' ') + '\n';
+            skillOutput += '> ' + skillsList[i].innerText.replace(/[\n\r]+/g, ' ') + '\n';
         }
     }
-console.log(skillOutput);
-GM_setClipboard(skillOutput, "text");
+    console.log(skillOutput);
+    GM_setClipboard(skillOutput, "text");
 }
 
-function showMessage(text){
-    messageBox.innerHTML = '<div style="align-self: flex-end; text-align: center; justify-self: center; margin-top: auto;">' + text + '</div>';
+function showMessage(text) {
+    //messageBox.innerHTML = '<div style="align-self: flex-end; text-align: center; justify-self: center; margin-top: auto;">' + text + '</div>';
+    messageBox.innerHTML = text;
 }
 
 function checkAllowedSkill(skill) { //return true if the skill is a valid skill (not blacklisted menu options)
@@ -563,7 +480,8 @@ function groupArr(data, n) { //Split an array into a 2d array, 3 items each
 
 function splitConsumables(list) { //Loop through a 2d array of consumables generated by groupArr(), parse necessary values, then return them properly formatted
     //console.info("splitConsumables: " + trackedSkill.name + list);
-    for (let i = 0; i <= list.length - 1; i++) {
+
+    for (let i = 0; i < list.length - 1; i++) {
         //        console.log("i" + list[i]);
         //        console.log("i0" + list[i][0]);
         if (combatPotionList.indexOf(list[i][0]) > 0) {
@@ -600,6 +518,7 @@ function splitConsumables(list) { //Loop through a 2d array of consumables gener
         }
     }
 }
+
 
 function parseTrackerComponent() { //Parse the tracker component for current xp progress
     let values = trackerComponent[0].innerText.split('\n');
@@ -685,14 +604,13 @@ function trackerLoop() {
         if (trackedSkill.name == currentSkill) {
             parseTrackerComponent();
             parseCards();
-            titleBox.innerHTML = displayBox("active")[0];
-            box.innerHTML = displayBox("active")[1];
+            displayBox("active");
             showMessage('');
         }
         else {
-            titleBox.innerHTML = displayBox("inactive")[0];
-            box.innerHTML = '';
-            messageBox.innerHTML = '';
+            displayBox("inactive");
+            trackerStatBox.innerHTML = '';
+            //messageBox.innerHTML = redirectText;
         }
 
     }
@@ -751,6 +669,13 @@ function calcMilestone(givenLevel) { //Based on given level, return the next mil
     }
 }
 
+function saveTrackerHistory() {
+    historyHeaderLeft.innerHTML = 'History';
+    historyHeaderCenter.innerHTML = statsHeaderCenter.innerHTML;
+    historyHeaderRight.innerHTML = statsHeaderRight.innerHTML;
+    trackerHistoryBox.innerHTML = trackerStatBox.innerHTML;
+}
+
 function displayBox(status) {
     //console.log('displayBox: ' + trackedSkill.name);
     let currentSkill = getCurrentSkill();
@@ -802,26 +727,21 @@ function displayBox(status) {
     //console.log(Date.now(), (Date.now() + estimatedLevelTime));
 
     let boxContents = '';
-    let boxTitle = '<div style="display:flex; min-width: 220px; align-items: baseline; border-bottom: 1px solid gray; padding: 0px 0px 4px">' +
-        '<div style="flex: 1; margin: 0px; padding: 0px;">&nbsp;<img style="vertical-align: middle; width: 24px; height: 24px; image-rendering: pixelated" src="assets/misc/' + getIcon(trackedSkill.name) + '">&nbsp;</div>' +
-        '<div style="flex: 2; margin: 0px; padding: 0px;">&nbsp;<b>' + trackedSkill.name + '</b></div>' +
-        '<div style="flex: 1; text-align:right;">' + determineTimer((Date.now() - trackedSkill.startTime)) + '&nbsp; </div>' +
-        '</div>';
-
-
-
 
     let boxDivider = '<hr style="border-color:gray;"></hr>';
-    let boxXP = '<p title="Total XP earned\" style=\"color:LightGreen;"><span style="text-align:left;";>XP: ' + earnedXp.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + xpPerHour.toLocaleString('en') + '/h)</span></p>';
-    let boxNextLevel = '<p title="Estimated time until next level\" style=\"color:CornflowerBlue; text-align:center; border-top: 1px solid gray"> Level up ' + dayjs((Date.now() - estimatedLevelTime)).toNow() + '</p>';
-    let boxNextMilestone = '<p title="Estimated time until next milestone level\" style=\"color:CornflowerBlue; text-align:center"> Tier up ' + dayjs((Date.now() - estimatedMilestoneTime)).toNow() + '</p>';
-    let boxCoins = '<p title="Total coins earned\" style=\"color:Gold;">Coins: ' + earnedCoins.toLocaleString('en') + '<span style=\"float:right;"> &#013;(' + coinsPerHour.toLocaleString('en') + '/h)</span></p>';
-    let boxKills = '<p title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon" style=\"color:Tomato;">Kills: ' + enemyKills.toLocaleString('en') + '<span style=\"float:right;\"> &#013;(' + killsPerHour.toLocaleString('en') + '/h)</span></p>';
-    let boxFood = '<p title="Total food consumed\" style=\"color:Salmon;">Food: ' + usedFood.toLocaleString('en') + '<span style="float:right;"> &#013;(' + foodPerHour.toLocaleString('en') + '/h)</span></p>';
-    const boxCombatPotions = '<p title="Total combat potions consumed\" style=\"color:Orange;">Combat Pots: ' + usedCombatPotions.toLocaleString('en') + '<span style="float:right;"> (' + combatPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
-    const boxGatheringPotions = '<p title="Total gathering potions consumed\" style=\"color:Pink;">Gathering Pots: ' + usedGatheringPotions.toLocaleString('en') + '<span style="float:right;"> (' + gatheringPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
-    const boxCraftingPotions = '<p title="Total crafting potions consumed\" style=\"color:LightBlue;">Crafting Pots: ' + usedCraftingPotions.toLocaleString('en') + '<span style="float:right;"> (' + craftingPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
-    let boxArrows = '<p title="Total arrows consumed\" style=\"color:Wheat;">Arrows: ' + usedArrows.toLocaleString('en') + '<span style="float:right;"> &#013;(' + arrowsPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxXP = '<p class="trackerStatXP" title="Total XP earned" style="color:LightGreen;"><span>XP: ' + earnedXp.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + xpPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxCoins = '<p class="trackerStatCoins" title="Total coins earned">Coins: ' + earnedCoins.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + coinsPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxKills = '<p class="trackerStatKills" title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon">Kills: ' + enemyKills.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + killsPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxFood = '<p class="trackerStatFood" title="Total food consumed">Food: ' + usedFood.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + foodPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxArrows = '<p class="trackerStatArrows" title="Total arrows consumed\">Arrows: ' + usedArrows.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + arrowsPerHour.toLocaleString('en') + '/h)</span></p>';
+
+    const boxCombatPotions = '<p class="trackerStatCombatPots" title="Total combat potions consumed">Combat Pots: ' + usedCombatPotions.toLocaleString('en') + '<span class="trackerStatRight"> (' + combatPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
+    const boxGatheringPotions = '<p class="trackerStatGatheringPots" title="Total gathering potions consumed\">Gathering Pots: ' + usedGatheringPotions.toLocaleString('en') + '<span class="trackerStatRight"> (' + gatheringPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
+    const boxCraftingPotions = '<p class="trackerStatCraftingPots" title="Total crafting potions consumed">Crafting Pots: ' + usedCraftingPotions.toLocaleString('en') + '<span class="trackerStatRight"> (' + craftingPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
+
+    let boxNextLevel = '<p class="trackerStatMilestone" title="Estimated time until next level" style="border-top: 1px solid gray"> Level up ' + dayjs((Date.now() - estimatedLevelTime)).toNow() + '</p>';
+    let boxNextMilestone = '<p class="trackerStatMilestone" title="Estimated time until next milestone level"> Tier up ' + dayjs((Date.now() - estimatedMilestoneTime)).toNow() + '</p>';
+
     let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat(trackedSkill.startTime, Date.now()) + '</b><hr>' + redirectText;
 
     // If on correct skill page, show full details
@@ -859,17 +779,178 @@ function displayBox(status) {
                 boxContents += boxNextMilestone;
             }
         }
-        return [boxTitle, boxContents];
+        statsHeaderLeft.innerHTML = '<img src="assets/misc/' + getIcon(trackedSkill.name) + '">';
+        statsHeaderCenter.innerHTML = '&nbsp; ' + trackedSkill.name;
+        statsHeaderRight.innerHTML = determineTimer((Date.now() - trackedSkill.startTime));
+        trackerStatBox.innerHTML = boxContents;
     }
-
-    return [boxTitle, ''] //return only title if inactive
+    statsHeaderLeft.innerHTML = '<img style="vertical-align: middle; width: 24px; height: 24px; image-rendering: pixelated" src="assets/misc/' + getIcon(trackedSkill.name) + '">';
+    statsHeaderCenter.innerHTML = trackedSkill.name;
+    statsHeaderRight.innerHTML = determineTimer((Date.now() - trackedSkill.startTime));
+    //return [boxTitle, ''] //return only title if inactive
 }
-    
-
-    //return boxTitle + boxDivider + boxContents;
 
 dayjs.extend(window.dayjs_plugin_relativeTime);
 dayjs.extend(window.dayjs_plugin_duration);
 
 showMessage(startingText);
 setInterval(trackerLoop, timeInterval); //Recurring stat box updater
+
+/*------------------------
+UI Components Below
+------------------------*/
+
+const styles = `
+.trackerNavBar { 
+    bottom: 4px;
+    right: 24px;
+    background: #0D2234; 
+    border: 2px solid #51606D;
+    padding: 4px; 
+    opacity: .7;
+    border-radius: 5px;
+    position: fixed;
+    display: flex;
+}
+.trackerNavButton { 
+    padding-left: 4px;
+    padding-right: 4px;
+    line-height: 1;
+    user-select: none;
+}
+.trackerWindow {
+    background: #0D2234;
+    opacity: .7;
+    border: 2px solid #51606D;
+    border-radius: 5px;
+    position: fixed;
+    bottom: 42px;
+    right: 24px;
+    min-height: 10px;
+    min-width: 100px;
+    max-width: 1000px;
+    max-height: 1000px;
+    display: inline-flex;
+}    
+.trackerColumn { 
+    max-width: 500px;
+    max-height: 500px;
+    flex-direction: column;
+    margin: 6px;
+    display: flex;
+}
+.trackerHeader {
+    user-select: none;
+    display: flex;
+    border-bottom: 1px solid gray; 
+    margin: 4px;
+}
+.trackerButton {
+    text-align: center;
+    user-select: none;
+    border: 1px solid gray; 
+    border-radius: 5px;
+    margin: 4px;
+    padding: 0px 4px
+}
+.trackerStatBox {
+    order: 2;
+}
+.trackerStatRight {
+    float:right;
+}
+.trackerStatMilestone {
+    color: CornflowerBlue;
+    text-align:center;  
+}
+.trackerStatXP {
+    color: LightGreen;
+}
+.trackerStatCoins {
+    color: Gold;
+}
+.trackerStatKills {
+    color: Tomato;
+}
+.trackerStatFood {
+    color: Salmon;
+}
+.trackerStatCombatPots {
+    color: Orange;
+}
+.trackerStatGatheringPots {
+    color: Pink;
+}
+.trackerStatCraftingPots {
+    color: LightBlue;
+}
+.trackerStatArrows {
+    color: Wheat;
+}
+.boxStyle {
+    background: #0D2234;
+    flex: content;
+    min-width: 0px;
+    min-height: 0px;
+    vertical-align: middle;
+}
+.trackerButtonOn {
+    color:lightgreen;
+}
+.trackerButtonOff {
+    color:salmon;
+}
+.trackerIcon{
+    height: 24px; 
+    image-rendering: pixelated;
+    margin: -4px 4px 0px;
+} 
+.boxFunStuff {
+    order: 3;
+}
+.messageBox {
+    order: 3;
+    text-align: center;
+}
+.titleBox {
+    display:flex; 
+    min-width: 150px; 
+    min-height: 24px;
+    align-items: baseline; 
+    border-bottom: 1px solid gray; 
+    flex: 1; 
+    margin: 2px;
+}
+.boxSettings {
+    order: 2;
+}
+.titleFunStuffBox {
+    order: 1;
+}
+.titleSettingsBox{
+}
+.flexItemLeft{
+}
+.flexItemRight{
+    flex: 1;
+    text-align: right;  
+}
+.flexItemCenter{
+    text-align: center;  
+}
+.trackerColumn1 { 
+    order: 3;
+    min-width: 200px;
+}
+.trackerColumn2 { 
+    order: 2;
+}
+.trackerColumn3 { 
+    order: 1;
+    min-width: 200px;
+}
+`
+//Create stylesheet
+var styleSheet = document.createElement("style")
+styleSheet.innerText = styles
+document.head.appendChild(styleSheet)
