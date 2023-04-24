@@ -1,5 +1,10 @@
 # Changelog
 
+### Version 0.6.2
+- History box is now auto saved when clicking the reset button
+- Cleaned up some old test code
+---
+
 ### Version 0.6.1
 - Rewrote most UI styling as stylesheet
 - Added history box
