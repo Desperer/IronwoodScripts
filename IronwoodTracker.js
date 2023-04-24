@@ -1,16 +1,14 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.1
+// @version      0.6.2
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
-// @match        https://limitlesstcg.com/decks/list/7212
 // @icon         https://github.com/Desperer/IronwoodScripts/blob/main/icon/IronwoodSword.png?raw=true
 // @require      https://unpkg.com/dayjs/dayjs.min.js
 // @require      https://unpkg.com/dayjs/plugin/relativeTime.js
 // @require      https://unpkg.com/dayjs/plugin/duration.js
-// @resource     /style.css
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
@@ -176,16 +174,6 @@ for (let i = 1; i <= 3; i++) {
 //Show first column by default
 trackerWindow.appendChild(column[1]);
 
-//Box for tracked stats
-var trackerStatBox = document.createElement('div');
-trackerStatBox.className = 'trackerStatBox';
-column[1].appendChild(trackerStatBox);
-
-//Box for messages
-var messageBox = document.createElement('div');
-messageBox.className = 'messageBox';
-column[1].appendChild(messageBox);
-
 //Title (header) for settings box
 var titleSettingsBox = document.createElement('div');
 var settingsHeaderLeft = document.createElement('div');
@@ -227,6 +215,16 @@ column[3].appendChild(titleHistoryBox);
 titleHistoryBox.appendChild(historyHeaderLeft);
 titleHistoryBox.appendChild(historyHeaderCenter);
 titleHistoryBox.appendChild(historyHeaderRight);
+
+//Box for tracked stats
+var trackerStatBox = document.createElement('div');
+trackerStatBox.className = 'trackerStatBox';
+column[1].appendChild(trackerStatBox);
+
+//Box for messages
+var messageBox = document.createElement('div');
+messageBox.className = 'messageBox';
+column[1].appendChild(messageBox);
 
 //Box for history
 var trackerHistoryBox = document.createElement('div');
@@ -270,7 +268,7 @@ var boxFunStuff = document.createElement('div');
 boxFunStuff.className = 'boxStyle boxSettings';
 column[2].appendChild(boxFunStuff);
 
-//Button to minimize tracker
+//navButton to minimize tracker
 var closeButton = document.createElement('div');
 closeButton.className = 'trackerNavButton';
 closeButton.title = 'Minimize tracker';
@@ -278,7 +276,7 @@ closeButton.innerHTML = '&#9776;';
 box2.insertBefore(closeButton, box2.firstChild);
 closeButton.addEventListener("click", function () { showTracker(); });
 
-//Button to reset tracker stats
+//navButton to reset tracker stats
 var resetButton = document.createElement('div');
 resetButton.className = 'trackerNavButton';
 resetButton.title = 'Restart tracker';
@@ -286,7 +284,7 @@ resetButton.innerHTML = '&#8634;';
 box2.insertBefore(resetButton, closeButton);
 resetButton.addEventListener("click", function () { resetTracker(); });
 
-//Button to open settings
+//navButton to open settings
 var settingsButton = document.createElement('div');
 settingsButton.className = 'trackerNavButton';
 settingsButton.title = 'Open settings menu';
@@ -294,7 +292,7 @@ settingsButton.innerHTML = '&#9881;';
 box2.insertBefore(settingsButton, resetButton);
 settingsButton.addEventListener("click", function () { showSettings(); });
 
-//Button for fun stuff!
+//navButton for fun stuff!
 var funStuffButton = document.createElement('div');
 funStuffButton.className = 'trackerNavButton';
 funStuffButton.title = 'History';
@@ -303,7 +301,7 @@ funStuffButton.innerHTML = '&#9728;';
 box2.insertBefore(funStuffButton, settingsButton);
 funStuffButton.addEventListener("click", function () { showFunStuff(); });
 
-//Button for share snapshot
+//navButton for share snapshot
 var shareSnapshotButton = document.createElement('div');
 shareSnapshotButton.className = 'trackerButton';
 shareSnapshotButton.title = 'Copy a shareable snapshot of your account progress, formatted for discord'
@@ -311,7 +309,7 @@ shareSnapshotButton.innerHTML = 'Share Stats'
 shareSnapshotButton.addEventListener("click", function () { shareSnapshot(); });
 column[2].appendChild(shareSnapshotButton);
 
-//Button for history
+//navButton for history
 var saveHistoryButton = document.createElement('div');
 saveHistoryButton.className = 'trackerButton';
 saveHistoryButton.title = 'Save current stat window in history panel, for comparison purposes'
@@ -320,6 +318,7 @@ saveHistoryButton.addEventListener("click", function () { saveTrackerHistory(); 
 column[2].appendChild(saveHistoryButton);
 
 function resetTracker() { //Reset all stats in the tracker
+    saveTrackerHistory(); //Save current stat box to history
     trackerStatBox.innerHTML = ''; //Clear stat box content immediately
     messageBox.innerHTML = '';
     stopSound();
@@ -425,7 +424,7 @@ function idlePlaySound() {
     }
 }
 
-function shareSnapshot() {
+function shareSnapshot() { //Copy formatted list of skill levels to clipboard
     let skillsList = document.getElementsByClassName('scroll custom-scrollbar scroll-margin')[0].childNodes;
     let skillTemp = '';
     let skillOutput = '';
@@ -442,7 +441,6 @@ function shareSnapshot() {
 }
 
 function showMessage(text) {
-    //messageBox.innerHTML = '<div style="align-self: flex-end; text-align: center; justify-self: center; margin-top: auto;">' + text + '</div>';
     messageBox.innerHTML = text;
 }
 
@@ -515,7 +513,6 @@ function splitConsumables(list) { //Loop through a 2d array of consumables gener
         }
     }
 }
-
 
 function parseTrackerComponent() { //Parse the tracker component for current xp progress
     let values = trackerComponent[0].innerText.split('\n');
