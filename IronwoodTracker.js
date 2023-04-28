@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2
+// @version      0.6.3
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -519,10 +519,11 @@ function parseTrackerComponent() { //Parse the tracker component for current xp 
     let progress = values[values.length - 1].split(' / ');;
     //console.log(values);
     //console.log(progress);
-    trackedSkill.currentLevel = values[1].split(' / ')[0].slice(4);
+    trackedSkill.currentLevel = values[1].split(' / ')[0].slice(4, 6);
     trackedSkill.currentLevelXP = removeCommas(progress[0]);
     trackedSkill.nextLevelXP = removeCommas(progress[1].slice(0, -3));
     //console.log(trackedSkill.currentLevelXP, trackedSkill.nextLevelXP);
+
 }
 
 function initializeCards() {

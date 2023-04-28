@@ -1,5 +1,9 @@
 # Changelog
 
+### Version 0.6.3
+- Fixed a bug with level potions
+---
+
 ### Version 0.6.2
 - History box is now auto saved when clicking the reset button
 - Cleaned up some old test code
