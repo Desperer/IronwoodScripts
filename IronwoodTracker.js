@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.3
+// @version      0.6.4
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -312,8 +312,8 @@ column[2].appendChild(shareSnapshotButton);
 //navButton for history
 var saveHistoryButton = document.createElement('div');
 saveHistoryButton.className = 'trackerButton';
-saveHistoryButton.title = 'Save current stat window in history panel, for comparison purposes'
-saveHistoryButton.innerHTML = 'Save History'
+saveHistoryButton.title = 'Manually save current stat window in history panel. Also saved automatically when clicking reset';
+saveHistoryButton.innerHTML = 'Save History';
 saveHistoryButton.addEventListener("click", function () { saveTrackerHistory(); });
 column[2].appendChild(saveHistoryButton);
 
@@ -764,7 +764,7 @@ function displayBox(status) {
         if (usedArrows > 0) {
             boxContents += boxArrows;
         }
-        if (earnedXp > 0) {
+        if (earnedXp > 0 && trackedSkill.currentLevel < 100) {
             //           boxContents += boxNextLevel;
             boxContents += boxNextLevel;
             //console.log(milestoneLevel[0]);
