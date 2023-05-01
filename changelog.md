@@ -1,5 +1,9 @@
 # Changelog
 
+### Version 0.6.6
+- Fixed a bug with level 100 skills (maybe) (again) (please make it stop)
+---
+
 ### Version 0.6.5
 - Fixed a bug with level 100 skills (maybe) (again)
 ---

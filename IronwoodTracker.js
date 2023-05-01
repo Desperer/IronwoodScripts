@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.5
+// @version      0.6.6
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -670,6 +670,7 @@ function calcMilestone(givenLevel) { //Based on given level, return the next mil
             return [level, xp];
         }
     }
+    return [0,0]; //if no milestone found
 }
 
 function saveTrackerHistory() {
@@ -721,12 +722,15 @@ function displayBox(status) {
     requiredXP = trackedSkill.nextLevelXP - trackedSkill.currentLevelXP;
     estimatedLevelTime = requiredXP / xpPerMs;
     }
-
+    let requiredXpMilestone = 0;
+    let estimatedMilestoneTime = 0;
     let milestoneLevel = calcMilestone(trackedSkill.currentLevel); //[Level, Total XP]
     //console.log(milestoneLevel)
-    let requiredXpMilestone = milestoneLevel[1] - trackedSkill.currentXp;
+    if (milestoneLevel[0] > 0) { //Check if a milestone level was found
+        requiredXpMilestone = milestoneLevel[1] - trackedSkill.currentXp;
+        estimatedMilestoneTime = requiredXpMilestone / xpPerMs;
+    }
     //console.log('requirexpmilestone: ', requiredXpMilestone, 'currentXp:', trackedSkill.currentXp,  )
-    let estimatedMilestoneTime = requiredXpMilestone / xpPerMs;
     //console.log('estimated milestone time: ', estimatedMilestoneTime/1000)
     //console.log((Date.now + estimatedLevelTime));
     //(trackedSkill.currentLevel) - trackedSkill.currentXp);
