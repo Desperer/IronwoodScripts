@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.4
+// @version      0.6.5
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -516,12 +516,20 @@ function splitConsumables(list) { //Loop through a 2d array of consumables gener
 
 function parseTrackerComponent() { //Parse the tracker component for current xp progress
     let values = trackerComponent[0].innerText.split('\n');
-    let progress = values[values.length - 1].split(' / ');;
+    let progress = values[values.length - 1];
+    if (progress.includes(' / ')) { //Check if skill is max level
+    progress = progress.split(' / ');
+    trackedSkill.nextLevelXP = removeCommas(progress[1].slice(0, -3)); 
+    }
+    else {
+        progress = [progress, 0];
+        trackedSkill.nextLevelXP = 0;
+    }
     //console.log(values);
     //console.log(progress);
-    trackedSkill.currentLevel = values[1].split(' / ')[0].slice(4, 6);
+    trackedSkill.currentLevel = values[1].split(' / ')[0].slice(4,7).trim();
     trackedSkill.currentLevelXP = removeCommas(progress[0]);
-    trackedSkill.nextLevelXP = removeCommas(progress[1].slice(0, -3));
+
     //console.log(trackedSkill.currentLevelXP, trackedSkill.nextLevelXP);
 
 }
@@ -707,8 +715,12 @@ function displayBox(status) {
     const usedCraftingPotions = trackedSkill.startingCraftingPotions - trackedSkill.currentCraftingPotions;
     const craftingPotionsPerHour = Math.floor(usedCraftingPotions / elapsedTimeHours);
 
-    let requiredXP = trackedSkill.nextLevelXP - trackedSkill.currentLevelXP;
-    let estimatedLevelTime = requiredXP / xpPerMs;
+    let requiredXP = 0;
+    let estimatedLevelTime = 0;
+    if (trackedSkill.nextLevelXP > 0) {
+    requiredXP = trackedSkill.nextLevelXP - trackedSkill.currentLevelXP;
+    estimatedLevelTime = requiredXP / xpPerMs;
+    }
 
     let milestoneLevel = calcMilestone(trackedSkill.currentLevel); //[Level, Total XP]
     //console.log(milestoneLevel)
