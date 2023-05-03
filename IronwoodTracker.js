@@ -28,10 +28,12 @@ var soundInterval = 10 * 1000 // Default 10*1000 = 10 seconds, this is the time 
 //Alert sound URLs
 let rareDropSound = new Audio("https://cdn.freesound.org/previews/571/571487_7114905-lq.mp3");
 let idleSound = new Audio("https://cdn.freesound.org/previews/504/504773_9961300-lq.mp3");
+const houseClaimSound = new Audio('https://cdn.freesound.org/previews/415/415763_6090639-lq.mp3');
 
 //Alert volumes
 rareDropSound.volume = 1; //Default 1, Use a decimal like .8 for quieter alert sound
 idleSound.volume = 1; //Default 1, Use a decimal like .8 for quieter alert sound
+houseClaimSound.volume = 1; //Default 1, Use a decimal like .8 for quieter alert sound
 
 /*---------------------------------------------------------------------------
         DO NOT EDIT BELOW! DO NOT EDIT BELOW! DO NOT EDIT BELOW!
@@ -46,13 +48,16 @@ var isRunning = false; // Tracker requires manual click to start as there is not
 //Local storage variables for settings
 var rareAlert;
 var idleAlert;
+let houseClaimAlert;
 
 //Get settings values from local storage
 (async () => {
     rareAlert = await GM.getValue('rareAlert', false);
     idleAlert = await GM.getValue('idleAlert', false);
+    houseClaimAlert = await GM.getValue('houseClaimAlert', false);
     if (rareAlert == true) { rareAlertButton.className = 'trackerButton trackerButtonOn'; } else { rareAlertButton.className = 'trackerButton trackerButtonOff'; }
     if (idleAlert == true) { idleAlertButton.className = 'trackerButton trackerButtonOn'; } else { idleAlertButton.className = 'trackerButton trackerButtonOff'; }
+    if (houseClaimAlert) { houseClaimAlert.className = 'trackerButton trackerButtonOn'; } else { houseClaimAlert.className = 'trackerButton trackerButtonOff'; }
 })();
 
 //Messages to display
@@ -248,6 +253,14 @@ idleAlertButton.innerHTML = 'Idle sound';
 idleAlertButton.addEventListener("click", function () { toggleIdleAlert(); });
 column[2].append(idleAlertButton);
 
+//Button to toggle idle sound alerts
+const houseClaimAlertButton = document.createElement('div');
+if (houseClaimAlert) { houseClaimAlertButton.className = 'trackerButton trackerButtonOn'; } else { houseClaimAlertButton.className = 'trackerButton trackerButtonOff'; }
+houseClaimAlertButton.title = 'Toggle repeated sound notifications when house has something to claim';
+houseClaimAlertButton.innerHTML = 'House claim sound';
+houseClaimAlertButton.addEventListener("click", function () { toggleHouseClaimAlert(); });
+column[2].append(houseClaimAlertButton);
+
 
 //Title (header) for fun stuff
 var titleFunStuffBox = document.createElement('div');
@@ -410,6 +423,19 @@ function toggleIdleAlert() { //toggle sound alert for rare drop
     }
 }
 
+function toggleHouseClaimAlert() { //toggle sound alert for rare drop
+    if (houseClaimAlert) {
+        houseClaimAlertButton.className = 'trackerButton trackerButtonOff';
+        houseClaimAlert = false;
+        (async () => { await (GM.setValue('houseClaimAlert', false)); })();
+    }
+    else {
+        houseClaimAlertButton.className = 'trackerButton trackerButtonOn';
+        houseClaimAlert = true;
+        (async () => { await (GM.setValue('houseClaimAlert', true)); })();
+    }
+}
+
 function playSound() {
     rareDropSound.play();
 }
@@ -429,7 +455,7 @@ function houseClaimPlaySound() {
     if (primaryElements.length > 0) {
         for (const element of primaryElements) {
             if (element.innerText == 'Claim') {
-                idleSound.play();
+                houseClaimSound.play();
                 return;
             }
         }
@@ -635,8 +661,8 @@ function trackerLoop() {
     }
     if (idleAlert == true) {
         idlePlaySound();
-        houseClaimPlaySound();
     }
+    if (houseClaimAlert) houseClaimPlaySound();
 }
 
 function timerFormat(startTime, endTime) { //Return time between two dates in readable format
