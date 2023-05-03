@@ -424,6 +424,18 @@ function idlePlaySound() {
     }
 }
 
+function houseClaimPlaySound() {
+    const primaryElements = document.getElementsByClassName("primary");
+    if (primaryElements.length > 0) {
+        for (const element of primaryElements) {
+            if (element.innerText == 'Claim') {
+                idleSound.play();
+                return;
+            }
+        }
+    }
+}
+
 function shareSnapshot() { //Copy formatted list of skill levels to clipboard
     let skillsList = document.getElementsByClassName('scroll custom-scrollbar scroll-margin')[0].childNodes;
     let skillTemp = '';
@@ -623,6 +635,7 @@ function trackerLoop() {
     }
     if (idleAlert == true) {
         idlePlaySound();
+        houseClaimPlaySound();
     }
 }
 
