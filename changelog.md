@@ -1,5 +1,9 @@
 # Changelog
 
+### Version 0.6.8
+- House idle alert decoupled from idle alert
+---
+
 ### Version 0.6.7
 - Idle alert is now also triggered by a house automation ending
 ---
