@@ -1,15 +1,14 @@
 # Changelog
 
+### Version 0.6.8
+- House idle alert decoupled from idle alert
+---
+
+### Version 0.6.7
+- Idle alert is now also triggered by a house automation ending
+---
+
 ### Version 0.6.6
-- Fixed a bug with level 100 skills (maybe) (again) (please make it stop)
----
-
-### Version 0.6.5
-- Fixed a bug with level 100 skills (maybe) (again)
----
-
-
-### Version 0.6.4
 - Fixed a bug with level 100 skills (maybe)
 - Added some clarification to the manual save history button
 ---
