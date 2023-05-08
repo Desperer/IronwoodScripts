@@ -1,5 +1,10 @@
 # Changelog
 
+### Version 0.6.9
+- House idle alert renamed
+- House idle alert bugfix
+---
+
 ### Version 0.6.8
 - House idle alert decoupled from idle alert
 ---
