@@ -1,5 +1,10 @@
 # Changelog
 
+### Version 0.6.10
+- Rare drop alert now displays a message box that turns off the alert when clicked, other buttons no longer turn it off
+- Rare drop alert will now stay off until the tracker is reset or page is refreshed
+---
+
 ### Version 0.6.9
 - House idle alert renamed
 - House idle alert bugfix

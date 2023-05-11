@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.9
+// @version      0.6.10
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des
 // @match        https://ironwoodrpg.com/*
@@ -22,12 +22,12 @@
         CONFIGURATION - EDIT THESE TO YOUR LIKING!
 ---------------------------------------------------------------------------*/
 //Polling intervals
-var timeInterval = 2 * 1000; // Default 2*1000 = 2 seconds, this is the time between stat box refreshes. Probably no real downside to going lower but it doesn't look as nice
-var soundInterval = 10 * 1000 // Default 10*1000 = 10 seconds, this is the time between sound alerts when idling/inactive
+const timeInterval = 3 * 1000; // Default 3*1000 = 3 seconds, this is the time between stat box refreshes. Probably no real downside to going lower but it doesn't look as nice.
+const soundInterval = 20 * 1000 // Default 20*1000 = 20 seconds, this is the time between sound alerts when idling/inactive or getting a rare drop
 
 //Alert sound URLs
-let rareDropSound = new Audio("https://cdn.freesound.org/previews/571/571487_7114905-lq.mp3");
-let idleSound = new Audio("https://cdn.freesound.org/previews/504/504773_9961300-lq.mp3");
+const rareDropSound = new Audio("https://cdn.freesound.org/previews/571/571487_7114905-lq.mp3");
+const idleSound = new Audio("https://cdn.freesound.org/previews/504/504773_9961300-lq.mp3");
 const claimSound = new Audio('https://cdn.freesound.org/previews/415/415763_6090639-lq.mp3');
 
 //Alert volumes
@@ -231,6 +231,12 @@ var messageBox = document.createElement('div');
 messageBox.className = 'messageBox';
 column[1].appendChild(messageBox);
 
+//Box for notif messages
+var notifBox = document.createElement('div');
+notifBox.className = "trackerNotifBox";
+notifBox.innerText = 'Rare drop! Click to dismiss.';
+notifBox.addEventListener("click", function () { dismissAlert(); });
+
 //Box for history
 var trackerHistoryBox = document.createElement('div');
 trackerHistoryBox.className = 'trackerStatBox';
@@ -334,7 +340,6 @@ function resetTracker() { //Reset all stats in the tracker
     saveTrackerHistory(); //Save current stat box to history
     trackerStatBox.innerHTML = ''; //Clear stat box content immediately
     messageBox.innerHTML = '';
-    stopSound();
     hasPlayed = false;
     let currentSkill = getCurrentSkill();
     if (checkAllowedSkill(currentSkill)) {
@@ -359,7 +364,6 @@ function resetTracker() { //Reset all stats in the tracker
 }
 
 function showTracker() { //minimize the tracker UI
-    stopSound();
     if (boxToggleState == true) {
         document.body.removeChild(trackerWindow);
         boxToggleState = false;
@@ -372,7 +376,6 @@ function showTracker() { //minimize the tracker UI
 
 
 function showSettings() { //toggle showing column2
-    stopSound();
     if (boxSettingsToggleState == false) {
         trackerWindow.appendChild(column[2]);
         boxSettingsToggleState = true;
@@ -384,7 +387,6 @@ function showSettings() { //toggle showing column2
 }
 
 function showFunStuff() { //toggle showing column3
-    stopSound();
     if (boxFunStuffToggleState == false) {
         trackerWindow.appendChild(column[3]);
         boxFunStuffToggleState = true;
@@ -436,13 +438,26 @@ function toggleClaimAlert() { //toggle sound alert for rare drop
     }
 }
 
-function playSound() {
+function playAlert() {
     rareDropSound.play();
 }
 
-function stopSound() {
-    clearInterval(soundStorage);
+function startAlert() {
+    console.log('startAlert() ran!');
+    if (!hasPlayed) {
+        console.log ('...and hasPlayed was false!');
+        soundStorage = setInterval(playAlert, soundInterval);
+        document.body.appendChild(notifBox);
+        hasPlayed = true;
+    }
 }
+
+function dismissAlert() {
+        clearInterval(soundStorage);
+        document.body.removeChild(notifBox);
+        //hasPlayed = false;
+}
+
 
 function idlePlaySound() {
     if (document.getElementsByClassName("ring").length == 0) {
@@ -616,10 +631,9 @@ function parseCards() { //Find all cards, parse necessary values, then store the
                 if (cardText[j].includes('Bone') || cardText[j].includes('Fang')) { //Get starting kills
                     trackedSkill.currentKills = removeCommas(cardText[j + 1]);
                 }
-                if (hasPlayed == false) {
+                if (notifStatus == false) { //Check for rare drop
                     if (cardText[j].includes('Blueprint') || cardText[j].includes('Ring') || cardText[j].includes('Amulet') || cardText[j].includes('Rune') || cardText[j].includes('Dagger')) {
                         notifStatus = true;
-                        hasPlayed = true;
                     }
                 }
             }
@@ -638,7 +652,7 @@ function parseCards() { //Find all cards, parse necessary values, then store the
     }
 }
 
-function trackerLoop() {
+function trackerLoop() { //main loop run by the main interval timer
     let currentSkill = getCurrentSkill();
 
     if (isRunning == true && boxToggleState == true) {
@@ -653,16 +667,13 @@ function trackerLoop() {
             trackerStatBox.innerHTML = '';
             //messageBox.innerHTML = redirectText;
         }
+        
+        if (notifStatus) startAlert();
+        if (idleAlert) idlePlaySound();
+        if (claimAlert) claimPlaySound();
+    }
 
-    }
-    if (notifStatus == true && hasPlayed == false) {
-        soundStorage = setInterval(playSound, soundInterval);
-        hasPlayed = true;
-    }
-    if (idleAlert == true) {
-        idlePlaySound();
-    }
-    if (claimAlert) claimPlaySound();
+
 }
 
 function timerFormat(startTime, endTime) { //Return time between two dates in readable format
@@ -860,6 +871,18 @@ const styles = `
     border-radius: 5px;
     position: fixed;
     display: flex;
+}
+.trackerNotifBox { 
+    bottom: 4px;
+    right: 140px;
+    background: crimson; 
+    border: 2px solid #51606D;
+    padding: 4px; 
+    opacity: .7;
+    border-radius: 5px;
+    position: fixed;
+    display: flex;
+    font-size: 12px;
 }
 .trackerNavButton { 
     padding-left: 4px;
