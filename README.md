@@ -6,18 +6,17 @@ Track useful action stats in Ironwood RPG.
 
 ### Features
 
-- Tracks resource gain and consumption in both skilling and combat
-- Estimates time until you reach your goals
-- Save a temporary copy of tracked stats for easy comparisons
-- Plays sound alerts on rare item drop or when the player is idling (configurable)
-- Easily hide out of view when not in use - tracking continues even when minimized
+- Tracks resource gain and consumption in both combat, gathering, and crafting.
+- Shows ETA for next level up and next resource tier.
+- Save a temporary copy of tracked stats for easy comparisons.
+- Plays sound alerts for rare item drops, or when the player/home automations are idling (configurable).
+- Minimizes out of the way when not in use, perfect for smaller screens.
 
-### Usage
+### Usage Tips
 
-- &#9776; minimizes the tracker
-- &#8634; starts/restarts the tracker for the current skill page
-- &#9881; opens the settings window, where you can toggle features on or off
-- Clicking any button stops rare drop alerts until &#8634; is clicked again
+- Hover over buttons to see a short description of what they do.
+- For most accurate results, click &#8634; to start the tracker immediately after clicking the "Start Action" button.
+- Clicking the rare drop notification silences it until &#8634; is clicked again, so it is recommended that you restart your action and the tracker if you wish to be alerted of future drops.
 
 
 ---
