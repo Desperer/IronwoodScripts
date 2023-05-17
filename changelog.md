@@ -1,5 +1,9 @@
 # Changelog
 
+### Version 0.6.11
+- Rewrote some parsing logic, fixing a bug where potions were not being tracked
+---
+
 ### Version 0.6.10
 - Rare drop alert now displays a message box that turns off the alert when clicked, other buttons no longer turn it off
 - Rare drop alert will now stay off until the tracker is reset or page is refreshed
