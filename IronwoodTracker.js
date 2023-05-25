@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.11
+// @version      0.6.12
 // @description  Tracks useful skilling stats in Ironwood RPG
-// @author       Des
+// @author       Des#2327
 // @match        https://ironwoodrpg.com/*
 // @icon         https://github.com/Desperer/IronwoodScripts/blob/main/icon/IronwoodSword.png?raw=true
 // @require      https://unpkg.com/dayjs/dayjs.min.js
@@ -511,6 +511,7 @@ function getCurrentSkill() { //Return the name of the skill currently in view
 }
 
 function removeCommas(string) { //Remove commas from a string and return it as a number
+    if (string === "Empty") return 0; // Set value to 0 if the string passed in is "Empty"
     return Number(string.replace(/,/g, ""));
 }
 
@@ -556,7 +557,7 @@ function splitConsumables(list, firstRun = false) { //Loop through a 2d array of
                 trackedSkill.startingCraftingPotions = trackedSkill.currentCraftingPotions;
             }
         }
-        if (consumable[2].includes('HP')) {
+        if (consumable.length > 2 && consumable[2].includes('HP')) {
             trackedSkill.currentFood = removeCommas(consumable[1]);
             //console.info("Set currentFood to " + trackedSkill.currentFood);
             if (firstRun) {
@@ -680,13 +681,11 @@ function trackerLoop() { //main loop run by the main interval timer
             trackerStatBox.innerHTML = '';
             //messageBox.innerHTML = redirectText;
         }
-        
-        if (notifStatus) startAlert();
-        if (idleAlert) idlePlaySound();
-        if (claimAlert) claimPlaySound();
     }
 
-
+    if (notifStatus) startAlert();
+    if (idleAlert) idlePlaySound();
+    if (claimAlert) claimPlaySound();
 }
 
 function timerFormat(startTime, endTime) { //Return time between two dates in readable format

@@ -1,5 +1,11 @@
 # Changelog
 
+### Version 0.6.12
+- Fixed a bug causing the tracker to not work when a consumable was 'Empty' (aka ran out of potions)
+- Alert sounds now play even when the tracker is not running or minimized
+
+---
+
 ### Version 0.6.11
 - Rewrote some parsing logic, fixing a bug where potions were not being tracked
 ---
