@@ -680,13 +680,11 @@ function trackerLoop() { //main loop run by the main interval timer
             trackerStatBox.innerHTML = '';
             //messageBox.innerHTML = redirectText;
         }
-        
-        if (notifStatus) startAlert();
-        if (idleAlert) idlePlaySound();
-        if (claimAlert) claimPlaySound();
     }
 
-
+    if (notifStatus) startAlert();
+    if (idleAlert) idlePlaySound();
+    if (claimAlert) claimPlaySound();
 }
 
 function timerFormat(startTime, endTime) { //Return time between two dates in readable format
