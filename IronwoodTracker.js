@@ -511,6 +511,7 @@ function getCurrentSkill() { //Return the name of the skill currently in view
 }
 
 function removeCommas(string) { //Remove commas from a string and return it as a number
+    if (string === "Empty") return 0; // Set value to 0 if the string passed in is "Empty"
     return Number(string.replace(/,/g, ""));
 }
 
@@ -556,7 +557,7 @@ function splitConsumables(list, firstRun = false) { //Loop through a 2d array of
                 trackedSkill.startingCraftingPotions = trackedSkill.currentCraftingPotions;
             }
         }
-        if (consumable[2].includes('HP')) {
+        if (consumable.length > 2 && consumable[2].includes('HP')) {
             trackedSkill.currentFood = removeCommas(consumable[1]);
             //console.info("Set currentFood to " + trackedSkill.currentFood);
             if (firstRun) {
