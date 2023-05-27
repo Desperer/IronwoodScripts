@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.12
+// @version      0.6.13
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -9,6 +9,7 @@
 // @require      https://unpkg.com/dayjs/dayjs.min.js
 // @require      https://unpkg.com/dayjs/plugin/relativeTime.js
 // @require      https://unpkg.com/dayjs/plugin/duration.js
+// @require      https://confettijs.org/confetti.min.js
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
@@ -280,6 +281,7 @@ titleFunStuffBox.appendChild(funStuffHeaderLeft);
 //Box for buttons
 var box2 = document.createElement('div');
 box2.className = "trackerNavBar";
+box2.setAttribute("id", "buttonBoxID")
 document.body.appendChild(box2);
 
 //Box for fun stuff
@@ -335,6 +337,19 @@ saveHistoryButton.title = 'Manually save current stat window in history panel. A
 saveHistoryButton.innerHTML = 'Save History';
 saveHistoryButton.addEventListener("click", function () { saveTrackerHistory(); });
 column[2].appendChild(saveHistoryButton);
+
+//Very important confetti code
+if (dayjs().get('month') == 5 && dayjs().get('date') == 6) { //if june 6th, do confetti
+let confetti = new Confetti('buttonBoxID');
+confetti.destroyTarget(false);
+notifBox.innerText = 'Today is my birthday! Have some confetti';
+document.body.appendChild(notifBox);
+setTimeout(() => {
+    notifBox.innerText = '';
+    document.body.removeChild(notifBox);
+  }, 10000);
+}
+
 
 function resetTracker() { //Reset all stats in the tracker
     saveTrackerHistory(); //Save current stat box to history
@@ -812,8 +827,8 @@ function displayBox(status) {
     const boxGatheringPotions = '<p class="trackerStatGatheringPots" title="Total gathering potions consumed\">Gathering Pots: ' + usedGatheringPotions.toLocaleString('en') + '<span class="trackerStatRight"> (' + gatheringPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
     const boxCraftingPotions = '<p class="trackerStatCraftingPots" title="Total crafting potions consumed">Crafting Pots: ' + usedCraftingPotions.toLocaleString('en') + '<span class="trackerStatRight"> (' + craftingPotionsPerHour.toLocaleString('en') + '/h)</span></p>';
 
-    let boxNextLevel = '<p class="trackerStatMilestone" title="Estimated time until next level" style="border-top: 1px solid gray"> Level up ' + dayjs((Date.now() - estimatedLevelTime)).toNow() + '</p>';
-    let boxNextMilestone = '<p class="trackerStatMilestone" title="Estimated time until next milestone level"> Tier up ' + dayjs((Date.now() - estimatedMilestoneTime)).toNow() + '</p>';
+    let boxNextLevel = '<p class="trackerStatMilestone" title="ETA until next level - ' + timerFormat(Date.now(), (Date.now() + estimatedLevelTime)) + '" style="border-top: 1px solid gray"> Level up ' + dayjs((Date.now() - estimatedLevelTime)).toNow() + '</p>';
+    let boxNextMilestone = '<p class="trackerStatMilestone" title="ETA until next tier - ' + timerFormat(Date.now(), (Date.now() + estimatedMilestoneTime)) + '"> Tier up ' + dayjs((Date.now() - estimatedMilestoneTime)).toNow() + '</p>';
 
     let boxInactiveText = '<b>' + trackedSkill.name + " - " + timerFormat(trackedSkill.startTime, Date.now()) + '</b><hr>' + redirectText;
 
