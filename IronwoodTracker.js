@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.13
+// @version      0.6.14
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -77,15 +77,16 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 const boneList = ['Bone', 'Medium Bone', 'Large Bone', 'Giant Bone',
     'Fang', 'Medium Fang', 'Large Fang'];
 
-const combatPotionList = ['Combat Potion', 'Super Combat Potion', 'Divine Combat Potion',
-                          'Double Attack Potion', 'Super Double Attack Potion', 'Divine Double Attack Potion',
-                          'Resistance Potion', 'Super Resistance Potion', 'Divine Resistance Potion'];
+const combatPotionList = ['Combat Efficiency Potion', 'Super Combat Efficiency Potion', 'Divine Combat Efficiency Potion',
+                          'Combat Loot Potion', 'Super Combat Loot Potion', 'Divine Combat Loot Potion',
+                          'Health Potion', 'Super Health Potion', 'Divine Health Potion'];
 
 const gatheringPotionList = ['Gather Level Potion', 'Super Gather Level Potion', 'Divine Gather Level Potion',
-                             'Gather Speed Potion', 'Super Gather Speed Potion', 'Divine Gather Speed Potion'];
+                             'Gather Efficiency Potion', 'Super Gather Efficiency Potion', 'Divine Gather Efficiency Potion',
+                             'Gather Yield Potion', 'Super Gather Yield Potion', 'Divine Gather Yield Potion'];
 
 const craftingPotionList = ['Craft Level Potion', 'Super Craft Level Potion', 'Divine Craft Level Potion',
-                            'Craft Speed Potion', 'Super Craft Speed Potion', 'Divine Craft Speed Potion',
+                            'Craft Efficiency Potion', 'Super Craft Efficiency Potion', 'Divine Craft Efficiency Potion',
                             'Preservation Potion', 'Super Preservation Potion', 'Divine Preservation Potion'];
 
 const milestones = new Map([ //Level : Total XP Required
@@ -526,6 +527,7 @@ function getCurrentSkill() { //Return the name of the skill currently in view
 }
 
 function removeCommas(string) { //Remove commas from a string and return it as a number
+    if (string === "Empty") return 0; // Set value to 0 if the string passed in is "Empty"
     return Number(string.replace(/,/g, ""));
 }
 
@@ -571,7 +573,7 @@ function splitConsumables(list, firstRun = false) { //Loop through a 2d array of
                 trackedSkill.startingCraftingPotions = trackedSkill.currentCraftingPotions;
             }
         }
-        if (consumable[2].includes('HP')) {
+        if (consumable.length > 2 && consumable[2].includes('HP')) {
             trackedSkill.currentFood = removeCommas(consumable[1]);
             //console.info("Set currentFood to " + trackedSkill.currentFood);
             if (firstRun) {
@@ -656,9 +658,14 @@ function parseCards(firstRun = false) { //Find all cards, parse necessary values
                     if (firstRun) { trackedSkill.startingKills = trackedSkill.currentKills; }
                 }
                 if (notifStatus == false) { //Check for rare drop
-                    if (cardText[j].includes('Blueprint') || cardText[j].includes('Ring') || cardText[j].includes('Amulet') || cardText[j].includes('Rune') || cardText[j].includes('Dagger')) {
-                        notifStatus = true;
-                    }
+                    if (
+                        cardText[j].includes('Blueprint') ||
+                        cardText[j].includes('Ring') ||
+                        cardText[j].includes('Amulet') ||
+                        cardText[j].includes('Rune') ||
+                        cardText[j].includes('Dagger') || 
+                        cardText[j].includes('Map')
+                    ) {notifStatus = true;}
                 }
             }
         }
@@ -695,13 +702,11 @@ function trackerLoop() { //main loop run by the main interval timer
             trackerStatBox.innerHTML = '';
             //messageBox.innerHTML = redirectText;
         }
-        
-        if (notifStatus) startAlert();
-        if (idleAlert) idlePlaySound();
-        if (claimAlert) claimPlaySound();
     }
 
-
+    if (notifStatus) startAlert();
+    if (idleAlert) idlePlaySound();
+    if (claimAlert) claimPlaySound();
 }
 
 function timerFormat(startTime, endTime) { //Return time between two dates in readable format
