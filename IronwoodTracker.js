@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.14
+// @version      0.6.15
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -9,7 +9,7 @@
 // @require      https://unpkg.com/dayjs/dayjs.min.js
 // @require      https://unpkg.com/dayjs/plugin/relativeTime.js
 // @require      https://unpkg.com/dayjs/plugin/duration.js
-// @require      https://confettijs.org/confetti.min.js
+// @require      https://unpkg.com/party-js/bundle/party.min.js
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
@@ -282,7 +282,6 @@ titleFunStuffBox.appendChild(funStuffHeaderLeft);
 //Box for buttons
 var box2 = document.createElement('div');
 box2.className = "trackerNavBar";
-box2.setAttribute("id", "buttonBoxID")
 document.body.appendChild(box2);
 
 //Box for fun stuff
@@ -341,8 +340,10 @@ column[2].appendChild(saveHistoryButton);
 
 //Very important confetti code
 if (dayjs().get('month') == 5 && dayjs().get('date') == 6) { //if june 6th, do confetti
-let confetti = new Confetti('buttonBoxID');
-confetti.destroyTarget(false);
+party.confetti(document.body);
+box2.addEventListener("click", function (e) {
+    party.confetti(this);
+});
 notifBox.innerText = 'Today is my birthday! Have some confetti';
 document.body.appendChild(notifBox);
 setTimeout(() => {
