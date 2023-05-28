@@ -1,14 +1,18 @@
 # Changelog
 
 ### Version 0.6.13
+- Added new potions to tracking list
+- Added maps to rare drops list
+---
+
+### Version 0.6.13
 - Level/milestone ETAs now show exact time value on hover
 - Super secret surprise
-
+---
 
 ### Version 0.6.12
 - Fixed a bug causing the tracker to not work when a consumable was 'Empty' (aka ran out of potions)
 - Alert sounds now play even when the tracker is not running or minimized
-
 ---
 
 ### Version 0.6.11
