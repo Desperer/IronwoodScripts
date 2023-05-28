@@ -1,6 +1,10 @@
 # Changelog
 
-### Version 0.6.13
+### Version 0.6.15
+- Changed super secret library to one greasyfork isn't grumpy with
+---
+
+### Version 0.6.14
 - Added new potions to tracking list
 - Added maps to rare drops list
 ---
