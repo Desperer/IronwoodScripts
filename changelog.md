@@ -1,5 +1,15 @@
 # Changelog
 
+### Version 1.0.0
+- Polished up the UI a bit
+- Moved all the buttons around just to mess up your muscle memory
+- Minimize button is now even minimizier
+- History no longer autosaves when hitting reset button (it would just overwrite your history with nothing if you were on a different skill page)
+- Rare drop alert reworked to accomodate more new drops, and fix a bug where it treated thieving daggers as rare loot
+- Removed references to discontinued content
+- Removed Miccyboi's birthday present
+---
+
 ### Version 0.6.15
 - Changed super secret library to one greasyfork isn't grumpy with
 ---
