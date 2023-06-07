@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      0.6.15
+// @version      1.0
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -9,7 +9,6 @@
 // @require      https://unpkg.com/dayjs/dayjs.min.js
 // @require      https://unpkg.com/dayjs/plugin/relativeTime.js
 // @require      https://unpkg.com/dayjs/plugin/duration.js
-// @require      https://unpkg.com/party-js/bundle/party.min.js
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.getValue
@@ -63,11 +62,11 @@ let claimAlert;
 
 //Messages to display
 const loadingText = 'Loading...';
-const startingText = 'Click &#8634; to start tracking';
+const startingText = 'Press &#8634; to start tracking';
 const redirectText = 'Tracking progress is saved in the background.<br>Return to the tracked skill page to view details.';
 const unavailableText = 'This page cannot be tracked.<br>Please try another.';
 
-const gatherPages = ['Woodcutting', 'Mining', 'Farming', 'Fishing'];
+const gatherPages = ['Woodcutting', 'Mining', 'Farming', 'Fishing', 'Thieving'];
 const craftPages = ['Smelting', 'Smithing', 'Forging', 'Alchemy', 'Cooking'];
 const combatPages = ['One-handed', 'Two-handed', 'Ranged', 'Defense'];
 
@@ -76,6 +75,9 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 
 const boneList = ['Bone', 'Medium Bone', 'Large Bone', 'Giant Bone',
     'Fang', 'Medium Fang', 'Large Fang'];
+    
+const rareList = ['Bluperint', 'Ring', 'Amulet', 'Rune', 'Off-hand', 'Map', 
+                  'Phoenix', 'Magical', 'Looting', 'Enchanted', 'Stopwatch' ];
 
 const combatPotionList = ['Combat Efficiency Potion', 'Super Combat Efficiency Potion', 'Divine Combat Efficiency Potion',
                           'Combat Loot Potion', 'Super Combat Loot Potion', 'Divine Combat Loot Potion',
@@ -269,20 +271,24 @@ claimAlertButton.innerHTML = 'Claim sound';
 claimAlertButton.addEventListener("click", function () { toggleClaimAlert(); });
 column[2].append(claimAlertButton);
 
-
 //Title (header) for fun stuff
 var titleFunStuffBox = document.createElement('div');
 var funStuffHeaderLeft = document.createElement('div');
 titleFunStuffBox.className = 'trackerHeader';
 funStuffHeaderLeft.className = 'flexItemLeft';
-funStuffHeaderLeft.innerHTML = 'Fun Stuff';
+funStuffHeaderLeft.innerHTML = 'Utilities';
 column[2].appendChild(titleFunStuffBox);
 titleFunStuffBox.appendChild(funStuffHeaderLeft);
 
-//Box for buttons
+//Main box for nav buttons
 var box2 = document.createElement('div');
 box2.className = "trackerNavBar";
 document.body.appendChild(box2);
+
+//Sub box for nav buttons that can be minimized
+var subButtonBox = document.createElement('div');
+subButtonBox.className = "trackerSubNavBar";
+box2.appendChild(subButtonBox);
 
 //Box for fun stuff
 var boxFunStuff = document.createElement('div');
@@ -294,23 +300,15 @@ var closeButton = document.createElement('div');
 closeButton.className = 'trackerNavButton';
 closeButton.title = 'Minimize tracker';
 closeButton.innerHTML = '&#9776;';
-box2.insertBefore(closeButton, box2.firstChild);
+box2.appendChild(closeButton);
 closeButton.addEventListener("click", function () { showTracker(); });
-
-//navButton to reset tracker stats
-var resetButton = document.createElement('div');
-resetButton.className = 'trackerNavButton';
-resetButton.title = 'Restart tracker';
-resetButton.innerHTML = '&#8634;';
-box2.insertBefore(resetButton, closeButton);
-resetButton.addEventListener("click", function () { resetTracker(); });
 
 //navButton to open settings
 var settingsButton = document.createElement('div');
 settingsButton.className = 'trackerNavButton';
 settingsButton.title = 'Open settings menu';
 settingsButton.innerHTML = '&#9881;';
-box2.insertBefore(settingsButton, resetButton);
+subButtonBox.appendChild(settingsButton);
 settingsButton.addEventListener("click", function () { showSettings(); });
 
 //navButton for fun stuff!
@@ -318,17 +316,8 @@ var funStuffButton = document.createElement('div');
 funStuffButton.className = 'trackerNavButton';
 funStuffButton.title = 'History';
 funStuffButton.innerHTML = '&#9728;';
-
-box2.insertBefore(funStuffButton, settingsButton);
+subButtonBox.appendChild(funStuffButton);
 funStuffButton.addEventListener("click", function () { showFunStuff(); });
-
-//navButton for share snapshot
-var shareSnapshotButton = document.createElement('div');
-shareSnapshotButton.className = 'trackerButton';
-shareSnapshotButton.title = 'Copy a shareable snapshot of your account progress, formatted for discord'
-shareSnapshotButton.innerHTML = 'Share Stats'
-shareSnapshotButton.addEventListener("click", function () { shareSnapshot(); });
-column[2].appendChild(shareSnapshotButton);
 
 //navButton for history
 var saveHistoryButton = document.createElement('div');
@@ -338,23 +327,17 @@ saveHistoryButton.innerHTML = 'Save History';
 saveHistoryButton.addEventListener("click", function () { saveTrackerHistory(); });
 column[2].appendChild(saveHistoryButton);
 
-//Very important confetti code
-if (dayjs().get('month') == 5 && dayjs().get('date') == 6) { //if june 6th, do confetti
-party.confetti(document.body);
-box2.addEventListener("click", function (e) {
-    party.confetti(this);
-});
-notifBox.innerText = 'Today is my birthday! Have some confetti';
-document.body.appendChild(notifBox);
-setTimeout(() => {
-    notifBox.innerText = '';
-    document.body.removeChild(notifBox);
-  }, 10000);
-}
+//navButton to reset tracker stats
+var resetButton = document.createElement('div');
+resetButton.className = 'trackerNavButton';
+resetButton.title = 'Restart tracker';
+resetButton.innerHTML = '&#8634;';
+subButtonBox.appendChild(resetButton);
+resetButton.addEventListener("click", function () { resetTracker(); });
 
 
 function resetTracker() { //Reset all stats in the tracker
-    saveTrackerHistory(); //Save current stat box to history
+    //saveTrackerHistory(); //Save current stat box to history
     trackerStatBox.innerHTML = ''; //Clear stat box content immediately
     messageBox.innerHTML = '';
     hasPlayed = false;
@@ -383,10 +366,12 @@ function resetTracker() { //Reset all stats in the tracker
 function showTracker() { //minimize the tracker UI
     if (boxToggleState == true) {
         document.body.removeChild(trackerWindow);
+        box2.removeChild(subButtonBox);
         boxToggleState = false;
     }
     else {
         document.body.appendChild(trackerWindow);
+        box2.appendChild(subButtonBox);
         boxToggleState = true;
     }
 }
@@ -492,22 +477,6 @@ function claimPlaySound() {
             }
         }
     }
-}
-
-function shareSnapshot() { //Copy formatted list of skill levels to clipboard
-    let skillsList = document.getElementsByClassName('scroll custom-scrollbar scroll-margin')[0].childNodes;
-    let skillTemp = '';
-    let skillOutput = '';
-    console.log(skillsList.length);
-    console.log(skillsList[9].innerText);
-    for (let i = 0; i < (skillsList.length - 13); i++) {
-        console.log(skillsList[i].innerText);
-        if (skillsList[i].innerText.includes('Lv.')) {
-            skillOutput += '> ' + skillsList[i].innerText.replace(/[\n\r]+/g, ' ') + '\n';
-        }
-    }
-    console.log(skillOutput);
-    GM_setClipboard(skillOutput, "text");
 }
 
 function showMessage(text) {
@@ -659,14 +628,19 @@ function parseCards(firstRun = false) { //Find all cards, parse necessary values
                     if (firstRun) { trackedSkill.startingKills = trackedSkill.currentKills; }
                 }
                 if (notifStatus == false) { //Check for rare drop
-                    if (
+                    if (rareList.some(v => cardText[j].includes(v))) { //Check if there's at least one rare drop from rareList present
+                        {notifStatus = true;}
+                    }
+                    
+                    /*if (
                         cardText[j].includes('Blueprint') ||
                         cardText[j].includes('Ring') ||
                         cardText[j].includes('Amulet') ||
                         cardText[j].includes('Rune') ||
                         cardText[j].includes('Dagger') || 
-                        cardText[j].includes('Map')
+                        cardText[j].includes('Map') ||
                     ) {notifStatus = true;}
+                    */
                 }
             }
         }
@@ -825,7 +799,7 @@ function displayBox(status) {
     let boxDivider = '<hr style="border-color:gray;"></hr>';
     let boxXP = '<p class="trackerStatXP" title="Total XP earned" style="color:LightGreen;"><span>XP: ' + earnedXp.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + xpPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxCoins = '<p class="trackerStatCoins" title="Total coins earned">Coins: ' + earnedCoins.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + coinsPerHour.toLocaleString('en') + '/h)</span></p>';
-    let boxKills = '<p class="trackerStatKills" title="Total enemies defeated &#013;Alpha monsters count as multiple kills &#013;Dungeon monsters are only tallied after completing a dungeon">Kills: ' + enemyKills.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + killsPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxKills = '<p class="trackerStatKills" title="Total enemies defeated&#013;Dungeon monsters are only tallied after completing a dungeon">Kills: ' + enemyKills.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + killsPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxFood = '<p class="trackerStatFood" title="Total food consumed">Food: ' + usedFood.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + foodPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxArrows = '<p class="trackerStatArrows" title="Total arrows consumed\">Arrows: ' + usedArrows.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + arrowsPerHour.toLocaleString('en') + '/h)</span></p>';
 
@@ -906,6 +880,11 @@ const styles = `
     position: fixed;
     display: flex;
 }
+.trackerSubNavBar { 
+    display: flex;
+    margin-right: auto;
+    order: -1;
+}
 .trackerNotifBox { 
     bottom: 4px;
     right: 140px;
@@ -930,7 +909,7 @@ const styles = `
     border: 2px solid #51606D;
     border-radius: 5px;
     position: fixed;
-    bottom: 42px;
+    bottom: 34px;
     right: 24px;
     min-height: 10px;
     min-width: 100px;
