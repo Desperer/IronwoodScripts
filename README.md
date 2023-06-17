@@ -1,14 +1,14 @@
 # IronwoodTracker    
 
-Track useful action stats in Ironwood RPG. 
+Track useful action stats in [Ironwood RPG](https://ironwoodrpg.com/).
 
-![image](https://user-images.githubusercontent.com/2962354/232615412-820e18ef-dda2-499a-8a67-80aa4c9740f3.png)
+![image](https://github.com/Desperer/IronwoodTracker/assets/2962354/aee5252a-2b7a-45b7-878d-d8e6ebad16c4)
 
 ### Features
 
-- Tracks resource gain and consumption in both combat, gathering, and crafting.
-- Shows ETA for next level up and next resource tier.
-- Save a temporary copy of tracked stats for easy comparisons.
+- Tracks resource gain and consumption in combat, gathering, and crafting.
+- Calculates ETA for next level up and next resource tier.
+- Saves tracked stats for easy side-by-side comparison
 - Plays sound alerts for rare item drops, or when the player/home automations are idling (configurable).
 - Minimizes out of the way when not in use, perfect for smaller screens.
 
@@ -16,7 +16,7 @@ Track useful action stats in Ironwood RPG.
 
 - Hover over buttons to see a short description of what they do.
 - For most accurate results, click &#8634; to start the tracker immediately after clicking the "Start Action" button.
-- Clicking the rare drop notification silences it until &#8634; is clicked again, so it is recommended that you restart your action and the tracker if you wish to be alerted of future drops.
+- Dismissing a rare drop alert turns them off until the game is refreshed - restart your action and refresh the game to receive further alerts.
 
 
 ---
