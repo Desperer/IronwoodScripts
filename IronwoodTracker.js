@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -79,16 +79,16 @@ const boneList = ['Bone', 'Medium Bone', 'Large Bone', 'Giant Bone',
 const rareList = ['Bluperint', 'Ring', 'Amulet', 'Rune', 'Off-hand', 'Map', 
                   'Phoenix', 'Magical', 'Looting', 'Enchanted', 'Stopwatch' ];
 
-const combatPotionList = ['Combat Efficiency Potion', 'Super Combat Efficiency Potion', 'Divine Combat Efficiency Potion',
+const combatPotionList = ['Combat XP Potion', 'Super Combat XP Potion', 'Divine Combat XP Potion',
                           'Combat Loot Potion', 'Super Combat Loot Potion', 'Divine Combat Loot Potion',
                           'Health Potion', 'Super Health Potion', 'Divine Health Potion'];
 
 const gatheringPotionList = ['Gather Level Potion', 'Super Gather Level Potion', 'Divine Gather Level Potion',
-                             'Gather Efficiency Potion', 'Super Gather Efficiency Potion', 'Divine Gather Efficiency Potion',
+                             'Gather XP Potion', 'Super Gather XP Potion', 'Divine Gather XP Potion',
                              'Gather Yield Potion', 'Super Gather Yield Potion', 'Divine Gather Yield Potion'];
 
 const craftingPotionList = ['Craft Level Potion', 'Super Craft Level Potion', 'Divine Craft Level Potion',
-                            'Craft Efficiency Potion', 'Super Craft Efficiency Potion', 'Divine Craft Efficiency Potion',
+                            'Craft XP Potion', 'Super Craft XP Potion', 'Divine Craft XP Potion',
                             'Preservation Potion', 'Super Preservation Potion', 'Divine Preservation Potion'];
 
 const milestones = new Map([ //Level : Total XP Required
@@ -128,6 +128,8 @@ const trackedSkill = {
     currentCoins: 0,
     startingKills: 0,
     currentKills: 0,
+    startingDust: 0,
+    currentDust: 0,
     startingDrops: 0,
     currentDrops: 0,
     currentLevel: 0,
@@ -137,6 +139,7 @@ const trackedSkill = {
     coinsInitialized: false,
     bonesInitialized: false,
     potsInitialized: false,
+    dustInitialized: false,
 
     reset: function () {
         this.name = '';
@@ -165,6 +168,7 @@ const trackedSkill = {
         this.coinsInitialized = false;
         this.bonesInitialized = false;
         this.potsInitialized = false;
+        this.dustInitialized = false;
     }
 };
 
@@ -627,6 +631,10 @@ function parseCards(firstRun = false) { //Find all cards, parse necessary values
                     trackedSkill.currentKills = removeCommas(cardText[j + 1]);
                     if (firstRun) { trackedSkill.startingKills = trackedSkill.currentKills; }
                 }
+                if (cardText[j].includes('Stardust')) { //Get starting stardust
+                    trackedSkill.currentDust = removeCommas(cardText[j + 1]);
+                    if (firstRun) { trackedSkill.startingDust = trackedSkill.currentDust; }
+                }
                 if (notifStatus == false) { //Check for rare drop
                     if (rareList.some(v => cardText[j].includes(v))) { //Check if there's at least one rare drop from rareList present
                         {notifStatus = true;}
@@ -705,21 +713,15 @@ function determineTimer(durationTimer) {
     if (durationTimer >= 3600000) { //3600000ms = 1 hour
         return dayjs.duration(durationTimer).format('HH:mm:ss');
     }
-
-    if (durationTimer >= 3600000) { //86400000ms = 1 day
+    if (durationTimer >= 86400000) { //86400000ms = 1 day
         return dayjs.duration(durationTimer).format('D:HH:mm:ss');
     }
-    return dayjs.duration(durationTimer).format('mm:ss');
+    return dayjs.duration(durationTimer).format('m:ss');
 }
 
 function getIcon(skill) {
     //Account for one-handed image being named improperly
-    if (skill == 'One-handed') {
-        return 'attack.png';
-    }
-    else {
         return skill.toLowerCase() + '.png';
-    }
 }
 
 function calcMilestone(givenLevel) { //Based on given level, return the next milestone level's total xp requirement
@@ -765,6 +767,9 @@ function displayBox(status) {
     let enemyKills = trackedSkill.currentKills - trackedSkill.startingKills;
     let killsPerHour = Math.floor(enemyKills / elapsedTimeHours);
 
+    let earnedDust = trackedSkill.currentDust - trackedSkill.startingDust;
+    let dustPerHour = Math.floor(earnedDust / elapsedTimeHours);
+
     const usedCombatPotions = trackedSkill.startingCombatPotions - trackedSkill.currentCombatPotions;
     const combatPotionsPerHour = Math.floor(usedCombatPotions / elapsedTimeHours);
 
@@ -800,6 +805,7 @@ function displayBox(status) {
     let boxXP = '<p class="trackerStatXP" title="Total XP earned" style="color:LightGreen;"><span>XP: ' + earnedXp.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + xpPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxCoins = '<p class="trackerStatCoins" title="Total coins earned">Coins: ' + earnedCoins.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + coinsPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxKills = '<p class="trackerStatKills" title="Total enemies defeated&#013;Dungeon monsters are only tallied after completing a dungeon">Kills: ' + enemyKills.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + killsPerHour.toLocaleString('en') + '/h)</span></p>';
+    let boxDust = '<p class="trackerStatDust" title="Total dust dropped">Dust: ' + earnedDust.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + dustPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxFood = '<p class="trackerStatFood" title="Total food consumed">Food: ' + usedFood.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + foodPerHour.toLocaleString('en') + '/h)</span></p>';
     let boxArrows = '<p class="trackerStatArrows" title="Total arrows consumed\">Arrows: ' + usedArrows.toLocaleString('en') + '<span class="trackerStatRight"> &#013;(' + arrowsPerHour.toLocaleString('en') + '/h)</span></p>';
 
@@ -822,6 +828,9 @@ function displayBox(status) {
         }
         if (enemyKills > 0) {
             boxContents += boxKills;
+        }
+        if (earnedDust > 0) {
+            boxContents += boxDust;
         }
         if (usedFood > 0) {
             boxContents += boxFood;
@@ -854,7 +863,7 @@ function displayBox(status) {
     }
     statsHeaderLeft.innerHTML = '<img style="vertical-align: middle; width: 24px; height: 24px; image-rendering: pixelated" src="assets/misc/' + getIcon(trackedSkill.name) + '">';
     statsHeaderCenter.innerHTML = trackedSkill.name;
-    statsHeaderRight.innerHTML = determineTimer((Date.now() - trackedSkill.startTime));
+    statsHeaderRight.innerHTML = (determineTimer((Date.now() - (trackedSkill.startTime))));
     //return [boxTitle, ''] //return only title if inactive
 }
 
@@ -956,6 +965,9 @@ const styles = `
 }
 .trackerStatKills {
     color: Tomato;
+}
+.trackerStatDust {
+    color: Wheat;
 }
 .trackerStatFood {
     color: Salmon;

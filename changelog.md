@@ -1,5 +1,12 @@
 # Changelog
 
+### Version 1.0.1
+- Added stardust drop tracking
+- Updated potion trackign for new XP potions
+- Fixed One-handed icon not showing after game update
+- Fixed timer not displaying days properly
+---
+
 ### Version 1.0.0
 - Polished up the UI a bit
 - Moved all the buttons around just to mess up your muscle memory
