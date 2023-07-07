@@ -1,4 +1,9 @@
 # Changelog
+
+### Version 1.0.3
+- Fixed a bug where dust count would not reset properly
+---
+
 ### Version 1.0.2
 - Fixed a bug with starting the tracker on the new quests page
 - Removed old rare drop items from rare drop tracker

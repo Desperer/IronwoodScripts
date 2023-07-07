@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -158,6 +158,8 @@ const trackedSkill = {
         this.currentCoins = 0;
         this.startingKills = 0;
         this.currentKills = 0;
+        this.currentDust = 0;
+        this.startingDust = 0;
         this.startingDrops = 0;
         this.currentDrops = 0;
         this.currentLevel = 0;
