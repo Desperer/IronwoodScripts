@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -70,14 +70,13 @@ const gatherPages = ['Woodcutting', 'Mining', 'Farming', 'Fishing', 'Thieving'];
 const craftPages = ['Smelting', 'Smithing', 'Forging', 'Alchemy', 'Cooking'];
 const combatPages = ['One-handed', 'Two-handed', 'Ranged', 'Defense'];
 
-const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market', 'Quests', 'Leaderboards', 'Changelog',
+const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market', 'Daily Quests', 'Quest Shop', 'Leaderboards', 'Changelog',
     'Settings', 'Discord', 'Reddit', 'Patreon', 'Rules', 'Terms of Use', 'Privacy Policy', 'Guild'];
 
 const boneList = ['Bone', 'Medium Bone', 'Large Bone', 'Giant Bone',
     'Fang', 'Medium Fang', 'Large Fang'];
     
-const rareList = ['Bluperint', 'Ring', 'Amulet', 'Rune', 'Off-hand', 'Map', 
-                  'Phoenix', 'Magical', 'Looting', 'Enchanted', 'Stopwatch' ];
+const rareList = ['Bluperint', 'Ring', 'Amulet', 'Rune', 'Off-hand', 'Map'];
 
 const combatPotionList = ['Combat XP Potion', 'Super Combat XP Potion', 'Divine Combat XP Potion',
                           'Combat Loot Potion', 'Super Combat Loot Potion', 'Divine Combat Loot Potion',

@@ -1,10 +1,14 @@
 # Changelog
+### Version 1.0.2
+- Fixed a bug with starting the tracker on the new quests page
+- Removed old rare drop items from rare drop tracker
+---
 
 ### Version 1.0.1
 - Added stardust drop tracking
-- Updated potion trackign for new XP potions
+- Updated potion tracking for new XP potions
 - Fixed One-handed icon not showing after game update
-- Fixed timer not displaying days properly
+- Fixed timer not displaying times over 24 hours properly
 ---
 
 ### Version 1.0.0
