@@ -9,7 +9,7 @@ Track useful action stats in [Ironwood RPG](https://ironwoodrpg.com/).
 - Tracks resource gain and consumption in combat, gathering, and crafting.
 - Calculates ETA for next level up and next resource tier.
 - Saves tracked stats for easy side-by-side comparison
-- Plays sound alerts for rare item drops, or when the player/home automations are idling (configurable).
+- Toggleable sound alerts for rare item drops, actions stopping, and quest completion.
 - Minimizes out of the way when not in use, perfect for smaller screens.
 
 ### Usage Tips
