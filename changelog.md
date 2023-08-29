@@ -1,5 +1,10 @@
 # Changelog
 
+### Version 1.0.4
+- Fixed a bug where blueprints were not triggering rare drop alerts
+---
+
+
 ### Version 1.0.3
 - Fixed a bug where dust count would not reset properly
 ---

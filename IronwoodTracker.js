@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ironwood Tracker
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.0.4
 // @description  Tracks useful skilling stats in Ironwood RPG
 // @author       Des#2327
 // @match        https://ironwoodrpg.com/*
@@ -76,7 +76,7 @@ const blacklistedPages = ['Inventory', 'Equipment', 'House', 'Merchant', 'Market
 const boneList = ['Bone', 'Medium Bone', 'Large Bone', 'Giant Bone',
     'Fang', 'Medium Fang', 'Large Fang'];
     
-const rareList = ['Bluperint', 'Ring', 'Amulet', 'Rune', 'Off-hand', 'Map'];
+const rareList = ['Blueprint', 'Ring', 'Amulet', 'Rune', 'Off-hand', 'Map'];
 
 const combatPotionList = ['Combat XP Potion', 'Super Combat XP Potion', 'Divine Combat XP Potion',
                           'Combat Loot Potion', 'Super Combat Loot Potion', 'Divine Combat Loot Potion',
