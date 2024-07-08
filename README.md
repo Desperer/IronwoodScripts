@@ -1,5 +1,5 @@
 # IronwoodTracker    
-NOTE: This script has not been updated for new features in Ironwood's 1.0 release, but basic tracking for most skills should still work. Most other features have been largely superceded by the fantastic [Pancake-Scripts](https://greasyfork.org/en/scripts/475356-ironwood-rpg-pancake-scripts)
+NOTE: This script will not be updated for new features in Ironwood's 1.0 release, but basic tracking for most skills should still work. Most other features have been largely superceded by the fantastic [Pancake-Scripts](https://greasyfork.org/en/scripts/475356-ironwood-rpg-pancake-scripts)
 
 Track useful action stats in [Ironwood RPG](https://ironwoodrpg.com/).
 
